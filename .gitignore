@@ -1,0 +1,11 @@
+﻿__pycache__/
+*.pyc
+config/api_keys.json
+.env
+venv/
+*.bak
+memory/conversation_history.json
+
+memory/checkpoints.json
+memory/long_term.json
+tempCodeRunnerFile.py

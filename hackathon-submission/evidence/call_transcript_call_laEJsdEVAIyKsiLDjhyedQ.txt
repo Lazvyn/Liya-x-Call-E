@@ -1,0 +1,12 @@
+﻿[0s] bot: Hi,
+[0s] bot: is this Asha Rao?
+[4s] user: Yeah.
+[7s] bot: I’m calling for Sunrise Clinic about your annual checkup with Dr.
+[9s] user: Yeah, tell me.
+[12s] bot: I'm calling for Sunrise Clinic about Asha Rao's annual checkup with Dr.
+[16s] bot: Rao on Saturday, September fifth at 3 PM; can you still make it?
+[23s] user: Yeah, I can make it.
+[24s] bot: Thanks,
+[25s] bot: your appointment is confirmed.
+[31s] user: okay thank you
+[33s] bot: Thank you, bye.

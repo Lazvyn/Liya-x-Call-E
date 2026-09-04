@@ -1,0 +1,81 @@
+// Liya architecture diagram — Graphviz DOT source.
+// Render with: dot -Tpng architecture.dot -o architecture.png
+//              dot -Tsvg architecture.dot -o architecture.svg
+digraph LiyaArchitecture {
+    rankdir=TB;
+    fontname="Helvetica";
+    node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=11];
+    edge [fontname="Helvetica", fontsize=10];
+    bgcolor="white";
+
+    // ---- Entry points ----
+    subgraph cluster_entry {
+        label = "Entry points";
+        style = rounded;
+        color = "#888888";
+
+        desktop [label="Desktop App\nmain.py + ui.py\n(voice via Gemini Live)", fillcolor="#E3F2FD"];
+        backend [label="Cloud Run Backend\nbackend/server.py (FastAPI)\nPOST /task, /task/adk", fillcolor="#E3F2FD"];
+    }
+
+    // ---- Agent core ----
+    subgraph cluster_agent {
+        label = "Agent core";
+        style = rounded;
+        color = "#888888";
+
+        planner   [label="agent/planner.py\nGoal → JSON step plan", fillcolor="#FFF3E0"];
+        executor  [label="agent/executor.py\nRuns steps, retries", fillcolor="#FFF3E0"];
+        error     [label="agent/error_handler.py\nretry / skip / replan / abort", fillcolor="#FFF3E0"];
+        governance[label="agent/governance.py\nallow / confirm / deny per tool", fillcolor="#FFE0B2"];
+        queue     [label="agent/task_queue.py\nBackground task queue", fillcolor="#FFF3E0"];
+
+        adk_agent  [label="agent/adk_agent.py\nGoogle ADK Agent", fillcolor="#E8F5E9"];
+        adk_tools  [label="agent/adk_tools.py\nADK FunctionTool wrappers", fillcolor="#E8F5E9"];
+        adk_runner [label="agent/adk_runner.py\nADK session + run loop", fillcolor="#E8F5E9"];
+    }
+
+    // ---- Shared model client ----
+    ai_client [label="config/ai_client.py\nShared Gemini client\n(used by both paths)", shape=ellipse, fillcolor="#F3E5F5"];
+
+    // ---- Tools ----
+    subgraph cluster_tools {
+        label = "actions/*.py — tools";
+        style = rounded;
+        color = "#888888";
+
+        tools [label="web_search · file_controller · open_app\nbrowser_control · reminder · send_message\ncomputer_settings/control · desktop_control\nscreen_processor · youtube_video · weather_report\nflight_finder · file_processor · code_helper · dev_agent", fillcolor="#F1F8E9"];
+    }
+
+    // ---- State / persistence ----
+    memory [label="memory/memory_manager.py\nLong-term memory", fillcolor="#FCE4EC"];
+    firestore [label="Cloud Firestore\n(or local-file fallback)", shape=cylinder, fillcolor="#FCE4EC"];
+    logger [label="observability/logger.py\nStructured execution logs", fillcolor="#ECEFF1"];
+
+    // ---- Edges ----
+    desktop -> planner;
+    backend -> planner [label="POST /task"];
+    backend -> adk_runner [label="POST /task/adk"];
+
+    planner -> executor;
+    executor -> error;
+    error -> planner [label="replan", style=dashed];
+    executor -> queue [style=dashed, label="status updates"];
+    executor -> governance [label="policy check"];
+    governance -> tools [label="allow"];
+
+    adk_runner -> adk_agent;
+    adk_agent -> adk_tools;
+    adk_tools -> tools [label="calls same\nimplementation"];
+
+    planner -> ai_client;
+    error -> ai_client;
+    adk_agent -> ai_client;
+
+    executor -> logger;
+    adk_runner -> logger;
+
+    tools -> memory;
+    memory -> firestore;
+    queue -> firestore;
+}

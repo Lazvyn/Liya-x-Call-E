@@ -1,0 +1,275 @@
+{
+  "call_state": {
+    "id": "call_pAI-p3GptfnaaM6h4rSP-w",
+    "object": "call_task",
+    "status": "completed",
+    "task": "You are calling on behalf of Sunrise Clinic to confirm an upcoming appointment: annual checkup with Dr. Rao, scheduled for Saturday, September 05 at 03:00 PM UTC-04:00. Politely confirm whether Asha Rao can still make it. If not, ask whether they'd like to reschedule and to what time, or would prefer to cancel. Keep the call brief and courteous.",
+    "recipients": [
+      {
+        "id": "rcp_c3859b45184671d9",
+        "phones": [
+          "+9196••••••08"
+        ],
+        "locale": null,
+        "region": "IN",
+        "status": "completed",
+        "structured_result": null,
+        "summary": "The first call connected briefly but did not complete the appointment confirmation, so Asha Rao may have been busy or unavailable. Suggested retry: in about 45 minutes. You can confirm that suggested retry time, provide a different retry time, or ask to retry immediately.",
+        "attempts": [
+          {
+            "id": "att_27ca6d01f5c282e0",
+            "phone": "+9196••••••08",
+            "status": "completed",
+            "started_at": "2026-09-02T08:52:57",
+            "completed_at": "2026-09-02T08:53:13",
+            "summary": "The first call connected briefly but did not complete the appointment confirmation, so Asha Rao may have been busy or unavailable. Suggested retry: in about 45 minutes. You can confirm that suggested retry time, provide a different retry time, or ask to retry immediately.",
+            "transcript_turns": [
+              {
+                "offset_seconds": 0,
+                "speaker": "bot",
+                "text": "Hi,"
+              },
+              {
+                "offset_seconds": 0,
+                "speaker": "bot",
+                "text": "is this Asha Rao?"
+              },
+              {
+                "offset_seconds": 4,
+                "speaker": "user",
+                "text": "Hello."
+              },
+              {
+                "offset_seconds": 5,
+                "speaker": "bot",
+                "text": "I'm calling for Sunrise Clinic to confirm Asha Rao's annual checkup with Dr."
+              },
+              {
+                "offset_seconds": 9,
+                "speaker": "bot",
+                "text": "Rao on Saturday, September fifth at 3 PM UTC minus four;"
+              },
+              {
+                "offset_seconds": 13,
+                "speaker": "bot",
+                "text": "can you still make it?"
+              }
+            ],
+            "provider_call_id": "809d86b39a31460ca4739d3b5f841664",
+            "failure_code": null,
+            "failure_message": null
+          }
+        ]
+      }
+    ],
+    "structured_result": {
+      "notes": "A live person answered with \"Hello,\" but no confirmation, reschedule request, or cancellation was received before the call ended.",
+      "status": "unclear"
+    },
+    "summary": "The first call connected briefly but did not complete the appointment confirmation, so Asha Rao may have been busy or unavailable. Suggested retry: in about 45 minutes. You can confirm that suggested retry time, provide a different retry time, or ask to retry immediately.",
+    "task_completed": false,
+    "completion_confidence": {
+      "score": 0.72,
+      "label": "medium"
+    },
+    "evidence": [
+      "A live person answered briefly.",
+      "No confirmation, reschedule request, or cancellation decision was received.",
+      "The call ended shortly after the appointment confirmation question."
+    ],
+    "metadata": {
+      "recipient_name": "Asha Rao",
+      "appointment_time": "2026-09-05T15:00:00-04:00"
+    },
+    "failure_code": null,
+    "failure_message": null,
+    "created_at": "2026-09-02T12:49:32.609660Z",
+    "completed_at": "2026-09-02T12:53:57.714197Z"
+  },
+  "call_events": {
+    "object": "list",
+    "data": [
+      {
+        "id": "evt_76d42fa24bc8ccc0a949e1e5",
+        "type": "call.started",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:49:49.818901Z",
+        "level": "info",
+        "status": "completed",
+        "message": "run_call started.",
+        "details": {}
+      },
+      {
+        "id": "evt_23df1db14c120b67a5f415ca",
+        "type": "call.in_progress",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:49:54.265907Z",
+        "level": "info",
+        "status": "completed",
+        "message": "botlab create bot.",
+        "details": {}
+      },
+      {
+        "id": "evt_1ec1e2a32916c9a5934b1120",
+        "type": "call.in_progress",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:26.515818Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling resolve robot id.",
+        "details": {}
+      },
+      {
+        "id": "evt_dfa0b7a3aeb0ae64851dfe96",
+        "type": "call.in_progress",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:29.105802Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling create task.",
+        "details": {}
+      },
+      {
+        "id": "evt_641df6fd22ae5ac0483971e0",
+        "type": "call.completed",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:30.008880Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task created.",
+        "details": {}
+      },
+      {
+        "id": "evt_57af6bd7e159cb890bf056f8",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:30.571889Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task status=pending",
+        "details": {}
+      },
+      {
+        "id": "evt_80d25f0365e67124c162d4f0",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:35.795052Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task status=calling",
+        "details": {}
+      },
+      {
+        "id": "evt_3f6691043bc4b23766b577dc",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:43.022853Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call is ringing.",
+        "details": {}
+      },
+      {
+        "id": "evt_9822dba40af230187bdff471",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:57.355791Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call connected.",
+        "details": {}
+      },
+      {
+        "id": "evt_ddd8c5140f11ddca55f4d648",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:58.842196Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: Hi,",
+        "details": {}
+      },
+      {
+        "id": "evt_ae612bd7230695252a2778cb",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:52:59.516352Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: is this Asha Rao?",
+        "details": {}
+      },
+      {
+        "id": "evt_886c08052de07db412f3f8ff",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:53:02.934018Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: Hello.",
+        "details": {}
+      },
+      {
+        "id": "evt_8d296fdae7ca026afbbd1d42",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:53:04.325337Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: I'm calling for Sunrise Clinic to confirm Asha Rao's annual checkup with Dr.",
+        "details": {}
+      },
+      {
+        "id": "evt_21df0b1ef3133569b298df7b",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:53:08.339350Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: Rao on Saturday, September fifth at 3 PM UTC minus four;",
+        "details": {}
+      },
+      {
+        "id": "evt_e71582491009f46bda71d637",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:53:12.477392Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: can you still make it?",
+        "details": {}
+      },
+      {
+        "id": "evt_a69d15a1bab7be0f623eea6a",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:53:13.848574Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call ended; syncing final Calling result.",
+        "details": {}
+      },
+      {
+        "id": "evt_ebea7094b138014d6d4e1571",
+        "type": "call.completed",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:53:30.581241Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call ended from realtime events.",
+        "details": {}
+      },
+      {
+        "id": "evt_2fc6bf1d2e1a19096b3e8458",
+        "type": "call.updated",
+        "call_id": "call_pAI-p3GptfnaaM6h4rSP-w",
+        "created_at": "2026-09-02T12:53:51.403491Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task status=finished",
+        "details": {}
+      }
+    ],
+    "next_cursor": null
+  }
+}

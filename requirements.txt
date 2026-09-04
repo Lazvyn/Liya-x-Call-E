@@ -1,0 +1,34 @@
+﻿# Full desktop-app requirement set (main.py / ui.py + all actions/*.py).
+# Deploying the backend to Cloud Run? Use requirements-backend.txt instead —
+# it's the minimal subset the Dockerfile actually needs, without PyQt6,
+# pyautogui, playwright, etc. This file is kept as the local/desktop
+# superset so `pip install -r requirements.txt` still sets up the full app.
+google-genai>=1.0
+google-adk>=2.7.1
+google-cloud-firestore>=2.16
+fastapi>=0.111
+uvicorn[standard]>=0.29
+pydantic>=2.0
+numpy>=1.26   # used by actions/screen_processor.py, youtube_video.py, game_updater.py
+requests>=2.28   # used by demo/run_demo_http.py
+ddgs>=9.0        # actions/web_search.py's fallback search backend when Gemini quota/grounding is unavailable
+playwright>=1.44  # used by actions/browser_control.py; setup.py runs playwright install on top of this
+
+# Desktop app (main.py / ui.py) — imported unconditionally at module load,
+# so python main.py won't start without these.
+PyQt6>=6.7        # desktop HUD UI (ui.py)
+psutil>=5.9       # system stats shown in the HUD (ui.py)
+sounddevice>=0.4  # voice I/O for the Gemini Live loop (main.py)
+pyautogui>=0.9    # main.py eagerly imports actions/youtube_video.py, which
+                  # imports pyautogui unconditionally (no try/except there,
+                  # unlike desktop.py/computer_settings.py/computer_control.py)
+
+PyPDF2
+pdfplumber
+pandas
+pydub
+python-pptx
+Pillow
+mss
+send2trash
+youtube_transcript_api

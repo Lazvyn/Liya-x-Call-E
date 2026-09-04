@@ -1,0 +1,47 @@
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Secrets / config with real keys ─────────────────────────────────────────
+config/api_keys.json
+*.json.bak
+
+# ── Local memory store ────────────────────────────────────────────────────────
+memory/long_term.json
+
+# ── Desktop GUI files (not needed in the container) ──────────────────────────
+ui.py
+main.py
+setup.py
+
+# ── Dev / build artifacts ────────────────────────────────────────────────────
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── IDE files ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── OS files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Docs / planning files ────────────────────────────────────────────────────
+*.md
+task.md

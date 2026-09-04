@@ -1,0 +1,304 @@
+{
+  "call_state": {
+    "id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+    "object": "call_task",
+    "status": "failed",
+    "task": "You are calling on behalf of Sunrise Clinic to confirm an upcoming appointment: annual checkup with Dr. Rao, scheduled for Saturday, September 05 at 03:00 PM UTC-04:00. Politely confirm whether Asha Rao can still make it. If not, ask whether they'd like to reschedule and to what time, or would prefer to cancel. Keep the call brief and courteous.",
+    "recipients": [
+      {
+        "id": "rcp_c8d17106407bee28",
+        "phones": [
+          "+9196••••••08"
+        ],
+        "locale": null,
+        "region": "IN",
+        "status": "failed",
+        "structured_result": null,
+        "summary": "The first call did not connect or complete, and Asha Rao may be busy or unavailable; you can confirm retrying in about 45 minutes, provide a different retry time, or ask to retry immediately.",
+        "attempts": [
+          {
+            "id": "att_818ca2666b942de6",
+            "phone": "+9196••••••08",
+            "status": "failed",
+            "started_at": "2026-09-02T08:56:23",
+            "completed_at": "2026-09-02T08:56:23",
+            "summary": "The first call did not connect or complete, and Asha Rao may be busy or unavailable; you can confirm retrying in about 45 minutes, provide a different retry time, or ask to retry immediately.",
+            "transcript_turns": [],
+            "provider_call_id": "7dee1cbf9c0c4314a673fa9c7037024e",
+            "failure_code": "0",
+            "failure_message": null
+          }
+        ]
+      }
+    ],
+    "structured_result": {
+      "notes": "Call was declined immediately with 0 seconds duration; no transcript or ASR was captured, so appointment confirmation was not obtained.",
+      "status": "no_answer"
+    },
+    "summary": "The first call did not connect or complete, and Asha Rao may be busy or unavailable; you can confirm retrying in about 45 minutes, provide a different retry time, or ask to retry immediately.",
+    "task_completed": false,
+    "completion_confidence": {
+      "score": 0.68,
+      "label": "medium"
+    },
+    "evidence": [
+      "The call ended immediately with no call duration.",
+      "No conversation transcript or speech result was captured.",
+      "The appointment confirmation was not obtained."
+    ],
+    "metadata": {
+      "recipient_name": "Asha Rao",
+      "appointment_time": "2026-09-05T15:00:00-04:00"
+    },
+    "failure_code": "call_failed",
+    "failure_message": "calling task status=DECLINED (Hangup by: user)",
+    "created_at": "2026-09-02T12:55:27.248643Z",
+    "completed_at": "2026-09-02T12:57:43.710501Z"
+  },
+  "call_events": {
+    "object": "list",
+    "data": [
+      {
+        "id": "evt_72d9c6d8e58fa22756376bd2",
+        "type": "call.started",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:55:40.039883Z",
+        "level": "info",
+        "status": "failed",
+        "message": "run_call started.",
+        "details": {}
+      },
+      {
+        "id": "evt_a682c0ee39309b47392a3f49",
+        "type": "call.in_progress",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:55:42.932677Z",
+        "level": "info",
+        "status": "failed",
+        "message": "botlab create bot.",
+        "details": {}
+      },
+      {
+        "id": "evt_68bea3e5f8a838029f8af9f4",
+        "type": "call.in_progress",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:10.873426Z",
+        "level": "info",
+        "status": "failed",
+        "message": "calling resolve robot id.",
+        "details": {}
+      },
+      {
+        "id": "evt_7086d767d6e71e3a48f388fc",
+        "type": "call.in_progress",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:13.340380Z",
+        "level": "info",
+        "status": "failed",
+        "message": "calling create task.",
+        "details": {}
+      },
+      {
+        "id": "evt_310469c45e35aa27493919d6",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:14.384631Z",
+        "level": "info",
+        "status": "failed",
+        "message": "calling task created.",
+        "details": {}
+      },
+      {
+        "id": "evt_da4ee3b7b7461a25a4a8a6b5",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:14.923787Z",
+        "level": "info",
+        "status": "failed",
+        "message": "calling task status=pending",
+        "details": {}
+      },
+      {
+        "id": "evt_640248cf39dd87c2881a443a",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:20.136703Z",
+        "level": "info",
+        "status": "failed",
+        "message": "calling task status=calling",
+        "details": {}
+      },
+      {
+        "id": "evt_0d3384cb10b8a9205b4f3ae6",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:27.329712Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Call is ringing.",
+        "details": {}
+      },
+      {
+        "id": "evt_338cab5b5f44345ca353f2bf",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:37.495790Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Call connected.",
+        "details": {}
+      },
+      {
+        "id": "evt_d4a9877af5525a42ede1a7fc",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:38.532670Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: Hi,",
+        "details": {}
+      },
+      {
+        "id": "evt_91e047e72e5e030e37780263",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:39.201425Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: is this Asha Rao?",
+        "details": {}
+      },
+      {
+        "id": "evt_5242a86d21cea8670a7ea1b1",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:46.137193Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: Can you hear me?",
+        "details": {}
+      },
+      {
+        "id": "evt_49546c00f9efb4006cb10031",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:53.267195Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: I'm calling for Sunrise Clinic to confirm your annual checkup with Dr.",
+        "details": {}
+      },
+      {
+        "id": "evt_265bed695c5c080a21d3b580",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:56:56.843649Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: Rao on Saturday, September fifth at 3 PM U T C minus four;",
+        "details": {}
+      },
+      {
+        "id": "evt_efc6c38c3819d2af7043a444",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:01.082538Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: can you still make it?",
+        "details": {}
+      },
+      {
+        "id": "evt_edffbdc557d8b000aaad5512",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:07.704057Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Callee speech detected.",
+        "details": {}
+      },
+      {
+        "id": "evt_9edc3b7e5cf2d233dd5cd1ca",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:07.999015Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: Can you hear me?",
+        "details": {}
+      },
+      {
+        "id": "evt_815dffba42c94bb4dd8ef5f2",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:14.650756Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: Hello,",
+        "details": {}
+      },
+      {
+        "id": "evt_30192765b574573cd9538b9d",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:15.216894Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: this is Sunrise Clinic calling to confirm Asha Rao's annual checkup with Dr.",
+        "details": {}
+      },
+      {
+        "id": "evt_be10b8b5f7e6556a99ed10ea",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:19.683726Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Bot is speaking: Rao on Saturday, September fifth at 3 PM U T C minus four.",
+        "details": {}
+      },
+      {
+        "id": "evt_71f46e9a17b1ccf3ccec3390",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:20.274040Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Call ended; syncing final Calling result.",
+        "details": {}
+      },
+      {
+        "id": "evt_0a054d335dab3e728934172f",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:25.117126Z",
+        "level": "info",
+        "status": "failed",
+        "message": "calling task status=DECLINED",
+        "details": {}
+      },
+      {
+        "id": "evt_4bac532a1c8aa569226a900b",
+        "type": "call.updated",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:31.419889Z",
+        "level": "info",
+        "status": "failed",
+        "message": "Call ended from realtime events.",
+        "details": {}
+      },
+      {
+        "id": "evt_f11f123da4283996a4b7793e",
+        "type": "call.failed",
+        "call_id": "call_b5IPMEsxP2Hr9Vp4pYkNGg",
+        "created_at": "2026-09-02T12:57:38.787767Z",
+        "level": "error",
+        "status": "failed",
+        "message": "calling task completed with status=DECLINED",
+        "details": {}
+      }
+    ],
+    "next_cursor": null
+  }
+}

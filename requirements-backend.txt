@@ -1,0 +1,18 @@
+# ─────────────────────────────────────────────────────────────────────────
+# Backend / Cloud Run requirements — what backend/server.py + the ADK path
+# (agent/adk_tools.py's 11 wrapped actions, plus memory_tool) actually import.
+# call_e (CALL-E phone calls) needs nothing beyond requests, already listed.
+#
+# Deliberately excludes desktop-only packages (PyQt6, sounddevice,
+# pyautogui, playwright, mss, ...) that main.py/ui.py need but a headless
+# Cloud Run container never touches. See requirements.txt for the
+# full desktop-app superset used by `python main.py` locally.
+# ─────────────────────────────────────────────────────────────────────────
+google-genai>=1.0
+google-adk>=2.7.1
+google-cloud-firestore>=2.16
+fastapi>=0.111
+uvicorn[standard]>=0.29
+pydantic>=2.0
+requests>=2.28
+ddgs>=9.0

@@ -1,0 +1,79 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# cloudbuild.yaml — Google Cloud Build pipeline
+#
+# One command deploys Liya's backend to Cloud Run:
+#
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions _REGION=us-central1,_SERVICE=liya-backend \
+#     --project YOUR_PROJECT_ID
+#
+# Required Cloud Build substitution variables (can be set in trigger UI):
+#   _REGION   — Cloud Run region     (default: us-central1)
+#   _SERVICE  — Cloud Run service name (default: liya-backend)
+#
+# Required Secret Manager secrets (referenced below):
+#   liya-api-key      — the X-Liya-Key token clients must send
+#   gemini-api-key    — your Gemini API key
+#   firestore-project — your GCP project ID (usually == $PROJECT_ID)
+#
+# Optional Secret Manager secret:
+#   liya-judge-key    — a second, separately-revocable X-Liya-Key value
+#                       to hand out to hackathon judges (see
+#                       JUDGE_TESTING.md and backend/server.py's
+#                       LIYA_JUDGE_KEY). If you create this secret, add
+#                       LIYA_JUDGE_KEY=liya-judge-key:latest to the
+#                       --set-secrets line in the deploy step below.
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  _REGION:  us-central1
+  _SERVICE: liya-backend
+
+steps:
+  # ── Step 1: Build the Docker image ─────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/$_SERVICE:$BUILD_ID
+      - -t
+      - gcr.io/$PROJECT_ID/$_SERVICE:latest
+      - .
+
+  # ── Step 2: Push the image to Container Registry ───────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: push
+    args:
+      - push
+      - --all-tags
+      - gcr.io/$PROJECT_ID/$_SERVICE
+    waitFor: [build]
+
+  # ── Step 3: Deploy to Cloud Run ────────────────────────────────────────────
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE
+      - --image=gcr.io/$PROJECT_ID/$_SERVICE:$BUILD_ID
+      - --region=$_REGION
+      - --platform=managed
+      - --allow-unauthenticated          # public health endpoint; auth via X-Liya-Key
+      - --min-instances=0               # scale to zero when idle
+      - --max-instances=3
+      - --memory=512Mi
+      - --cpu=1
+      - --timeout=300                   # 5-min max per request (long tasks)
+      - --set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID,CLOUD_RUN_REGION=$_REGION
+      - --set-secrets=LIYA_API_KEY=liya-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest
+    waitFor: [push]
+
+images:
+  - gcr.io/$PROJECT_ID/$_SERVICE:$BUILD_ID
+  - gcr.io/$PROJECT_ID/$_SERVICE:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

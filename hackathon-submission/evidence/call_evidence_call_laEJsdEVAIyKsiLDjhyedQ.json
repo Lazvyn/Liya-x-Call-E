@@ -1,0 +1,428 @@
+{
+  "call_state": {
+    "id": "call_laEJsdEVAIyKsiLDjhyedQ",
+    "object": "call_task",
+    "status": "completed",
+    "task": "Tell them it's Sunrise Clinic calling for Asha Rao. It's about her annual checkup with Dr. Rao, Saturday September 5th at 3pm. Ask if she can still make it, and if not, ask if she'd like to reschedule or cancel. Keep it brief and courteous.",
+    "recipients": [
+      {
+        "id": "rcp_fe721b493cfffbb1",
+        "phones": [
+          "+9196••••••08"
+        ],
+        "locale": null,
+        "region": "US",
+        "status": "completed",
+        "structured_result": null,
+        "summary": "Call ended from realtime events.",
+        "attempts": [
+          {
+            "id": "att_a2dd6ebefdbac88a",
+            "phone": "+9196••••••08",
+            "status": "completed",
+            "started_at": "2026-09-02T22:18:50",
+            "completed_at": "2026-09-02T22:19:27",
+            "summary": "Call ended from realtime events.",
+            "transcript_turns": [
+              {
+                "offset_seconds": 0,
+                "speaker": "bot",
+                "text": "Hi,"
+              },
+              {
+                "offset_seconds": 0,
+                "speaker": "bot",
+                "text": "is this Asha Rao?"
+              },
+              {
+                "offset_seconds": 4,
+                "speaker": "user",
+                "text": "Yeah."
+              },
+              {
+                "offset_seconds": 7,
+                "speaker": "bot",
+                "text": "I\u2019m calling for Sunrise Clinic about your annual checkup with Dr."
+              },
+              {
+                "offset_seconds": 9,
+                "speaker": "user",
+                "text": "Yeah, tell me."
+              },
+              {
+                "offset_seconds": 12,
+                "speaker": "bot",
+                "text": "I'm calling for Sunrise Clinic about Asha Rao's annual checkup with Dr."
+              },
+              {
+                "offset_seconds": 16,
+                "speaker": "bot",
+                "text": "Rao on Saturday, September fifth at 3 PM; can you still make it?"
+              },
+              {
+                "offset_seconds": 23,
+                "speaker": "user",
+                "text": "Yeah, I can make it."
+              },
+              {
+                "offset_seconds": 24,
+                "speaker": "bot",
+                "text": "Thanks,"
+              },
+              {
+                "offset_seconds": 25,
+                "speaker": "bot",
+                "text": "your appointment is confirmed."
+              },
+              {
+                "offset_seconds": 31,
+                "speaker": "user",
+                "text": "okay thank you"
+              },
+              {
+                "offset_seconds": 33,
+                "speaker": "bot",
+                "text": "Thank you, bye."
+              }
+            ],
+            "provider_call_id": "e2cb717bf3744f29a68d6be2ef8fc6bc",
+            "failure_code": null,
+            "failure_message": null
+          }
+        ]
+      }
+    ],
+    "structured_result": null,
+    "summary": "Call ended from realtime events.",
+    "task_completed": true,
+    "completion_confidence": {
+      "score": 0.9,
+      "label": "high"
+    },
+    "evidence": [
+      "Call ended from realtime events.",
+      "A call transcript was captured."
+    ],
+    "metadata": {},
+    "failure_code": null,
+    "failure_message": null,
+    "created_at": "2026-09-03T02:17:13.893836Z",
+    "completed_at": "2026-09-03T02:19:59.019542Z"
+  },
+  "call_events": {
+    "object": "list",
+    "data": [
+      {
+        "id": "evt_61a7c6a36d7a656d5e62e94b",
+        "type": "call.started",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:17:30.179423Z",
+        "level": "info",
+        "status": "completed",
+        "message": "run_call started.",
+        "details": {}
+      },
+      {
+        "id": "evt_0a0640f9a43dc4fe7965d1a9",
+        "type": "call.in_progress",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:17:33.183032Z",
+        "level": "info",
+        "status": "completed",
+        "message": "botlab create bot.",
+        "details": {}
+      },
+      {
+        "id": "evt_bdafd4c4dbf2fc281f1098ca",
+        "type": "call.in_progress",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:04.451042Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling resolve robot id.",
+        "details": {}
+      },
+      {
+        "id": "evt_0c8d25df87860c8bb0cb0b6f",
+        "type": "call.in_progress",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:06.959630Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling create task.",
+        "details": {}
+      },
+      {
+        "id": "evt_042065c9e34948ba647e89f7",
+        "type": "call.completed",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:07.896457Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task created.",
+        "details": {}
+      },
+      {
+        "id": "evt_db0bdfaf9e8518202cc01e0c",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:08.480214Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task status=pending",
+        "details": {}
+      },
+      {
+        "id": "evt_c5ba5ea8ccf9953bd7f9e1ed",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:13.728799Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task status=calling",
+        "details": {}
+      },
+      {
+        "id": "evt_3417a97c7817dfea7e9bea83",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:33.444746Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call is ringing.",
+        "details": {}
+      },
+      {
+        "id": "evt_1148e0d6faafb184c0e8cab4",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:50.563816Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call connected.",
+        "details": {}
+      },
+      {
+        "id": "evt_89dbad1c29ab1753780b128a",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:51.515759Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: Hi,",
+        "details": {}
+      },
+      {
+        "id": "evt_0ad9fe1f2f975ff2d65412d2",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:52.202818Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: is this Asha Rao?",
+        "details": {}
+      },
+      {
+        "id": "evt_06d61040c7037559a053224b",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:56.097545Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: yeah",
+        "details": {}
+      },
+      {
+        "id": "evt_eae25f530d82c775fc36add6",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:56.395077Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: Yeah.",
+        "details": {}
+      },
+      {
+        "id": "evt_924da0d0ca18a59ea69647bf",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:18:58.937485Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: I\u2019m calling for Sunrise Clinic about your annual checkup with Dr.",
+        "details": {}
+      },
+      {
+        "id": "evt_f80a9142c108b1c7534e084b",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:00.514436Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: yeah tell me",
+        "details": {}
+      },
+      {
+        "id": "evt_89df4be443674d39e37c31ca",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:00.944072Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee interrupted: I\u2019m calling for Sunrise Clin ... [interrupted]",
+        "details": {}
+      },
+      {
+        "id": "evt_9251a2f53035d38d9c26842c",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:01.275025Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: Yeah, tell me.",
+        "details": {}
+      },
+      {
+        "id": "evt_7334a1ee6126f97e1a743c3c",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:03.828257Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: I'm calling for Sunrise Clinic about Asha Rao's annual checkup with Dr.",
+        "details": {}
+      },
+      {
+        "id": "evt_3d9afbc3362aba1e0190fad0",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:07.865822Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: Rao on Saturday, September fifth at 3 PM; can you still make it?",
+        "details": {}
+      },
+      {
+        "id": "evt_ebe28ff99957507ba0bcec15",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:14.307287Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: yeah",
+        "details": {}
+      },
+      {
+        "id": "evt_dc2c7e0a40572afaf2ad9254",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:14.605622Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: yeah i can make",
+        "details": {}
+      },
+      {
+        "id": "evt_b10b0d3549f5729c54d2ffae",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:14.909744Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: yeah i can make it",
+        "details": {}
+      },
+      {
+        "id": "evt_620d629ae30ea4af63547d79",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:15.204221Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: Yeah, I can make it.",
+        "details": {}
+      },
+      {
+        "id": "evt_4b4b23a3e9eba68535dddf05",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:16.299492Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: Thanks,",
+        "details": {}
+      },
+      {
+        "id": "evt_2ccd7f5e9d7a0c57fa42b43c",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:16.885252Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: your appointment is confirmed.",
+        "details": {}
+      },
+      {
+        "id": "evt_ccc41b9ed0376563bc55a7b1",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:23.466117Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee said: okay thank you",
+        "details": {}
+      },
+      {
+        "id": "evt_004db58f26ca28ee49f7f57f",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:24.553530Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Callee speech detected.",
+        "details": {}
+      },
+      {
+        "id": "evt_1f9c6b663567af6693330cbb",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:24.985651Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Bot is speaking: Thank you, bye.",
+        "details": {}
+      },
+      {
+        "id": "evt_723f697d30e75001584e7e12",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:27.588611Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call ended; syncing final Calling result.",
+        "details": {}
+      },
+      {
+        "id": "evt_ed46c10d088c4a5dc0e1aa73",
+        "type": "call.completed",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:28.030018Z",
+        "level": "info",
+        "status": "completed",
+        "message": "Call ended from realtime events.",
+        "details": {}
+      },
+      {
+        "id": "evt_d73937c11517af6b512d54f8",
+        "type": "call.updated",
+        "call_id": "call_laEJsdEVAIyKsiLDjhyedQ",
+        "created_at": "2026-09-03T02:19:57.247509Z",
+        "level": "info",
+        "status": "completed",
+        "message": "calling task status=finished",
+        "details": {}
+      }
+    ],
+    "next_cursor": null
+  }
+}

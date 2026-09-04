@@ -1,0 +1,55 @@
+%% Liya architecture diagram — Mermaid source.
+%% Renders natively in GitHub. Equivalent to diagrams/architecture.dot.
+flowchart TB
+    subgraph Entry["Entry points"]
+        desktop["Desktop App<br/>main.py + ui.py<br/>(voice via Gemini Live)"]
+        backend["Cloud Run Backend<br/>backend/server.py (FastAPI)<br/>POST /task, /task/adk"]
+    end
+
+    subgraph AgentCore["Agent core"]
+        planner["agent/planner.py<br/>Goal → JSON step plan"]
+        executor["agent/executor.py<br/>Runs steps, retries"]
+        error["agent/error_handler.py<br/>retry / skip / replan / abort"]
+        governance["agent/governance.py<br/>allow / confirm / deny per tool"]
+        queue["agent/task_queue.py<br/>Background task queue"]
+
+        adk_runner["agent/adk_runner.py<br/>ADK session + run loop"]
+        adk_agent["agent/adk_agent.py<br/>Google ADK Agent"]
+        adk_tools["agent/adk_tools.py<br/>ADK FunctionTool wrappers"]
+    end
+
+    ai_client(["config/ai_client.py<br/>Shared Gemini client<br/>(used by both paths)"])
+
+    subgraph Tools["actions/*.py — tools"]
+        tools["web_search · file_controller · open_app · browser_control<br/>reminder · send_message · computer_settings/control<br/>desktop_control · screen_processor · youtube_video<br/>weather_report · flight_finder · file_processor<br/>code_helper · dev_agent"]
+    end
+
+    memory["memory/memory_manager.py<br/>Long-term memory"]
+    firestore[("Cloud Firestore<br/>(or local-file fallback)")]
+    logger["observability/logger.py<br/>Structured execution logs"]
+
+    desktop --> planner
+    backend -->|POST /task| planner
+    backend -->|POST /task/adk| adk_runner
+
+    planner --> executor
+    executor --> error
+    error -.->|replan| planner
+    executor -.->|status updates| queue
+    executor --> governance
+    governance -->|allow| tools
+
+    adk_runner --> adk_agent
+    adk_agent --> adk_tools
+    adk_tools -->|calls same implementation| tools
+
+    planner --> ai_client
+    error --> ai_client
+    adk_agent --> ai_client
+
+    executor --> logger
+    adk_runner --> logger
+
+    tools --> memory
+    memory --> firestore
+    queue --> firestore
