@@ -6,12 +6,11 @@ hackathon's actual requirements, the form itself asks for:
 1. **PR URL** to `CALLE-AI/awesome-phone-call-agents` — see
    [`hackathon-submission/README.md`](hackathon-submission/README.md)
    for the exact fork/copy/PR steps.
-   **PR URL:** _fill in after opening the PR — do not submit a
-   placeholder link._
+   **PR URL:** https://github.com/CALLE-AI/awesome-phone-call-agents/pull/310
 2. **A ~3 minute demo video**, uploaded to YouTube or Vimeo, public.
    **Video URL:** _fill in once recorded/uploaded._
 3. **The email address associated with your CALL-E account.**
-   **Email:** _fill in._
+   **Email:** thoudamlanchenba360@gmail.com
 4. **(Optional) a URL to a functional demo application.**
    **Demo app URL:** _fill in if applicable, otherwise omit this
    field on the form._
@@ -136,3 +135,4 @@ A direct adapter so appointments can be read from (and results written
 back to) a Google Sheet or a common booking platform instead of a
 hand-provided CSV, and idempotency keys per recipient so re-running a
 batch never double-calls someone already confirmed.
+

@@ -1,7 +1,8 @@
-| name        | appointment-call-confirm |
-| ----------- | ------------------------- |
-| description | Places outbound CALL-E confirmation calls for a batch of upcoming appointments or bookings and returns a structured confirmed / needs-reschedule / declined / no-answer result per recipient, so a business can close its next-day no-show gap without a staff member manually dialing down the list. |
-| license     | MIT |
+---
+name: appointment-call-confirm
+description: Places outbound CALL-E confirmation calls for a batch of upcoming appointments or bookings and returns a structured confirmed / needs-reschedule / declined / no-answer result per recipient, so a business can close its next-day no-show gap without a staff member manually dialing down the list.
+license: MIT
+---
 
 # Appointment Call Confirm
 
@@ -111,6 +112,19 @@ phone country code if omitted — see `references/result-schema.md`),
 `locale`, `business_name` (used in the call script), `metadata`
 (free-form, echoed back with the result).
 
+## Setup
+
+```bash
+pip install -r requirements.txt
+export CALLE_API_KEY=calle_live_xxxxxxxx     # required
+export CALLE_BASE_URL=https://api.heycall-e.com  # optional, this is the default
+```
+
+See `references/examples.md` for full dry-run and real-run walkthroughs.
+`assets/authorized_numbers.example.txt` is an optional template hosts can
+use to keep a manual record of which recipients have a verified existing
+appointment, per the sourcing rule in `references/safety.md`.
+
 ## Safety Rules
 
 Read `references/safety.md` for the full contract. In short:
@@ -120,7 +134,7 @@ Read `references/safety.md` for the full contract. In short:
   the dry-run list first.
 - Only call the phone numbers explicitly provided for this batch —
   never a number pulled from an unrelated contact list or guessed.
-- Mask phone numbers in every user-facing summary (`+1415•••0101`);
+- Mask phone numbers in every user-facing summary (`+1415•••••01`);
   the full number is only ever sent to CALL-E's API, never printed to
   a log a bystander could read over someone's shoulder.
 - Do not fabricate a `confirmed` / `declined` / etc. result if CALL-E's
@@ -158,7 +172,17 @@ Never state a call was completed unless CALL-E's own status for that
   Developer API with the shared `result_schema`, polls to completion,
   and writes a results CSV. No dependency on any specific agent
   framework — just `requests` and the CALL-E API key.
+- `scripts/test_place_confirmation_calls.py` — unit tests for the
+  region-inference and result-parsing helpers in the runner above.
 - `references/result-schema.md` — the exact `result_schema` sent to
   CALL-E and how each field maps to the output above.
 - `references/safety.md` — the full safety contract this skill
   follows, aligned with this repository's repo-wide safety patterns.
+- `references/examples.md` — worked dry-run and real-run examples,
+  including sample CLI output and the resulting `results.csv`.
+- `assets/sample_appointments.csv` — a ready-to-use example batch file
+  in the input format this skill expects.
+- `assets/authorized_numbers.example.txt` — example template for a
+  manual, host-maintained record of recipients with a verified
+  existing appointment (see `references/safety.md`).
+- `requirements.txt` — the single runtime dependency (`requests`).
