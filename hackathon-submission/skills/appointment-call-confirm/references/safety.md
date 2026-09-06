@@ -25,12 +25,14 @@ rule below is enforced in `scripts/place_confirmation_calls.py` itself
   anything is dialed. An explicit `--yes` flag exists for
   non-interactive/automation use, and using it is loudly logged —
   it is not a quiet default.
-- **Optional exact-destination allowlisting**: passing `--allowlist
-  <file>` restricts calling to only the phone numbers listed in that
-  file (see `assets/authorized_numbers.example.txt`). Matching is
-  exact-string only — no fuzzy or partial matching that could let a
-  near-miss number through. Any batch row not on the allowlist is
-  skipped and reported as `failed: not authorized`, never dialed.
+- **Exact-destination allowlisting is required, not optional.**
+  `--allowlist <file>` (see `assets/authorized_numbers.example.txt`)
+  must be passed on every `--confirm` run — a live run with no
+  allowlist is refused outright before anything else happens. There is
+  no flag to skip this. Matching is exact-string only — no fuzzy or
+  partial matching that could let a near-miss number through. Any
+  batch row not on the allowlist is skipped and reported as `failed:
+  not authorized`, never dialed.
 - Every recipient must already have a specific, existing appointment
   with the caller's business. This skill does not qualify leads, do
   cold outreach, or contact anyone who hasn't already booked a slot.
@@ -52,12 +54,10 @@ rule below is enforced in `scripts/place_confirmation_calls.py` itself
 
 - The CALL-E API key is read from environment/config only; it is never
   printed, logged, or written into the results file.
-- **The API base URL is pinned to CALL-E's official HTTPS origin**
-  (`api.heycall-e.com`) by default. If `CALLE_BASE_URL` is overridden
-  to point anywhere else, the script refuses to run unless
-  `--allow-custom-host` is explicitly passed — so a misconfigured or
-  malicious base URL can never silently receive the bearer token. A
-  non-HTTPS scheme is rejected outright, with no override.
+- **The API base URL is hardcoded to CALL-E's official HTTPS origin**
+  (`api.heycall-e.com`). It is not read from an environment variable
+  and there is no flag to change it — the bearer credential can never
+  be sent to any other host, under any configuration.
 
 ## During the run
 
@@ -74,10 +74,15 @@ rule below is enforced in `scripts/place_confirmation_calls.py` itself
 - Phone numbers are masked (`+1415•••••01`) in every line printed to
   the terminal or written to a human-facing summary. The full number
   only ever appears in the direct API request to CALL-E.
-- **Any error body returned by CALL-E is sanitized before it is ever
-  printed or written to the results file**: the API key (if it
-  somehow appears in an error string) and any raw unmasked phone
-  number are redacted, and the text is length-capped.
+- **All provider-supplied text is sanitized before it is ever printed
+  or written to the results file — not just error bodies.** This
+  applies uniformly to HTTP error details, `notes`, and
+  `requested_new_time`: the API key (if it somehow appears), any raw
+  unmasked phone number, and ASCII control characters (which could
+  otherwise be used to spoof terminal output or inject log entries)
+  are all stripped, and the text is length-capped. CALL-E's structured
+  output is derived from a live phone conversation and is treated as
+  untrusted input, not safe-by-construction data.
 
 ## After the run
 
@@ -89,14 +94,12 @@ rule below is enforced in `scripts/place_confirmation_calls.py` itself
   `canceled`/`error`). A call still in progress when the run's poll
   window ends is reported as `pending`, with its `call_id`, not as a
   result.
-- **An ambiguous outcome halts the batch by default.** If any call
-  resolves to `pending` (poll timeout) or `unclear` (a structured
-  result CALL-E returned that doesn't match a known status), the
-  script stops before dialing the remaining recipients and tells the
-  operator to check that specific `call_id` in the CALL-E dashboard
-  first. This can be disabled with `--continue-on-ambiguous` for
-  operators who have a reason to want the whole batch to run
-  regardless, but it is off by default.
+- **An ambiguous outcome is an unconditional hard stop — there is no
+  override.** If any call resolves to `pending` (poll timeout) or
+  `unclear` (a structured result CALL-E returned that doesn't match a
+  known status), the script stops before dialing the remaining
+  recipients and tells the operator to check that specific `call_id`
+  in the CALL-E dashboard before running the rest as a new batch.
 - Sensitive appointment context (medical, legal, financial) is treated
   as logistics only: the call confirms a time slot, and the script's
   task template never asks the recipient to discuss the substance of

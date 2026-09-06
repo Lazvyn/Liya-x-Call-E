@@ -117,30 +117,32 @@ phone country code if omitted — see `references/result-schema.md`),
 ```bash
 pip install -r requirements.txt
 export CALLE_API_KEY=calle_live_xxxxxxxx     # required
-export CALLE_BASE_URL=https://api.heycall-e.com  # optional, this is the default
 ```
+
+The API base URL is not configurable — it is hardcoded in
+`scripts/place_confirmation_calls.py` to CALL-E's official HTTPS
+origin. There is no environment variable or flag that can redirect it.
 
 See `references/examples.md` for full dry-run and real-run walkthroughs.
 
-Beyond `--in`, `--out`, `--dry-run`, and `--confirm`, this script also
-enforces several safety properties directly in code (see
-`references/safety.md` for the full contract):
+Beyond `--in`, `--out`, `--dry-run`, and `--confirm`, this script
+enforces several safety properties directly in code, **none of which
+have an override flag** (see `references/safety.md` for the full
+contract):
 
-- `--allowlist assets/authorized_numbers.example.txt` — restrict
-  calling to only the phones listed in that file. Exact match only;
+- `--allowlist assets/authorized_numbers.example.txt` — **required for
+  every `--confirm` run.** A live run with no `--allowlist` given is
+  refused outright before anything else happens. Matching is exact;
   anything not listed is skipped and reported as `failed: not
   authorized`, never dialed.
-- Even with `--confirm`, a real run always requires the operator to
-  interactively type `CONFIRM` before any call goes out. Pass `--yes`
-  to skip that prompt for non-interactive/automation use (logged
-  loudly when used — not a quiet default).
-- `--allow-custom-host` — required if `CALLE_BASE_URL` is set to
-  anything other than the official CALL-E host; otherwise the script
-  refuses to run rather than risk sending the API key elsewhere.
-- `--continue-on-ambiguous` — by default the batch halts the moment
-  any call's outcome is `pending` or `unclear`, rather than dialing
-  the rest of the list while something is unresolved. Pass this flag
-  to disable that stop.
+- Even with `--confirm` and a valid allowlist, a real run still
+  requires the operator to interactively type `CONFIRM` before any
+  call goes out. `--yes` skips only that interactive prompt for
+  non-interactive/automation use (logged loudly when used) — it does
+  not skip the allowlist requirement.
+- Any call whose outcome is `pending` (poll timeout) or `unclear` (an
+  unrecognized structured result) is an unconditional hard stop for
+  the rest of the batch. There is no flag to continue past it.
 
 ## Safety Rules
 

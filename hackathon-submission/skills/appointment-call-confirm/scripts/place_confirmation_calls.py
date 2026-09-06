@@ -12,48 +12,49 @@ No dependency on any particular agent framework, so it can be pointed
 at CALL-E's SDK/API/CLI/MCP directly by any host that adopts this
 skill.
 
-Safety properties enforced by this script (see references/safety.md):
+Safety properties enforced by this script — none of them have an
+override flag; there is no escape hatch on any of these (see
+references/safety.md for the full contract):
     - Phone numbers are validated as strict ASCII E.164 before anything
       else happens to them — no Unicode digit variants, no smuggled
       characters.
-    - If --allowlist is given, only recipients whose phone exactly
-      matches an allowlist entry are called; everyone else is skipped
-      and reported as failed, never silently dialed.
-    - Even with --confirm passed, a real run requires the operator to
-      interactively type CONFIRM before any call goes out (an explicit
-      --yes flag exists for non-interactive automation, and is loudly
-      logged when used).
-    - The API base URL is pinned to CALL-E's official HTTPS origin.
-      Overriding it (CALLE_BASE_URL) requires the explicit
-      --allow-custom-host flag, so the API key is never silently sent
-      to an unexpected host.
+    - An allowlist is REQUIRED for every live (--confirm) run. Only
+      recipients whose phone exactly matches an allowlist entry are
+      called; everyone else is skipped and reported as failed. A live
+      run with no --allowlist given is refused outright.
+    - Even with --confirm and a valid allowlist, a real run still
+      requires the operator to interactively type CONFIRM before any
+      call goes out (--yes exists for non-interactive automation, and
+      is loudly logged when used — it does not skip the allowlist
+      requirement, only the interactive prompt).
+    - The API base URL is hardcoded to CALL-E's official HTTPS origin.
+      There is no environment variable or flag that can point it
+      anywhere else — the bearer credential is never sent to any other
+      host, full stop.
     - Each call's idempotency key is a stable hash of the appointment's
       own fields, not a random value — so re-running the same batch
       after an interruption reuses the same key instead of risking a
       duplicate call to the same recipient.
-    - If any call's outcome is ambiguous (poll timeout or an
-      unrecognized structured result), the batch stops by default
-      instead of continuing to dial the rest of the list.
-    - Provider error bodies are sanitized before being printed or
-      written to the results CSV.
+    - Any ambiguous outcome (poll timeout, or a structured result that
+      doesn't match a known status) is an unconditional hard stop for
+      the rest of the batch. There is no flag to continue past it.
+    - Every piece of provider-supplied text that is ever printed or
+      written to the results file — error bodies, notes, requested new
+      times — is sanitized first: control characters stripped, likely
+      credentials/phone numbers redacted, length capped.
 
 Usage:
     export CALLE_API_KEY=...              # required
-    export CALLE_BASE_URL=...             # optional, must match the
-                                           # official host unless
-                                           # --allow-custom-host is set
 
-    # 1. Always dry-run first — this places NO calls.
+    # 1. Always dry-run first — this places NO calls, and does not
+    #    require an allowlist (nothing is being dialed yet).
     python place_confirmation_calls.py --in appointments.csv --dry-run
 
-    # 2. Once the list looks right, run for real (interactive prompt
-    #    still required even with --confirm):
-    python place_confirmation_calls.py --in appointments.csv --out results.csv --confirm
-
-    # 3. Optional: restrict calls to a pre-approved recipient list —
-    #    anything not on it is skipped, never dialed.
-    python place_confirmation_calls.py --in appointments.csv --confirm \\
-        --allowlist assets/authorized_numbers.example.txt
+    # 2. A live run REQUIRES --allowlist. There is no way to place a
+    #    real call without one. Interactive CONFIRM is still required
+    #    even with --confirm passed.
+    python place_confirmation_calls.py --in appointments.csv --out results.csv \\
+        --confirm --allowlist assets/authorized_numbers.example.txt
 
 appointments.csv columns (header row required):
     recipient_name, phone, appointment_time, context, business_name[, region, locale]
@@ -79,16 +80,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urlsplit
-
 import requests
 
-# The one HTTPS origin bearer credentials are ever sent to by default.
-# Overriding this (CALLE_BASE_URL) requires --allow-custom-host, so a
-# misconfigured or malicious base URL can never silently exfiltrate
-# the API key.
+# The ONLY origin bearer credentials are ever sent to. This is not
+# configurable by any environment variable or CLI flag — there is no
+# escape hatch, on purpose. The API key must never be sendable to an
+# arbitrary host.
 OFFICIAL_HOST = "api.heycall-e.com"
-DEFAULT_BASE_URL = f"https://{OFFICIAL_HOST}"
+CALLE_BASE_URL = f"https://{OFFICIAL_HOST}"
 
 # Strict ASCII E.164: '+' followed by 7-15 ASCII digits, nothing else.
 # Deliberately rejects Unicode digit look-alikes (e.g. Arabic-Indic,
@@ -209,18 +208,41 @@ def _stable_idempotency_key(appt: "Appointment") -> str:
     return "acc-" + hashlib.sha256(basis.encode("utf-8")).hexdigest()[:32]
 
 
-def _sanitize_error_text(text: str, api_key: str) -> str:
-    """Strip anything that looks like the bearer token or an
-    unmasked phone number before an error body is ever printed or
-    written to the results file."""
+_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _sanitize_output_text(text: str, api_key: str = "") -> str:
+    """Deep-sanitize ANY provider-supplied text before it is ever
+    printed to the terminal or written to the results file — this is
+    applied uniformly to error bodies, `notes`, and
+    `requested_new_time`, not just HTTP error details. CALL-E's
+    structured_result fields are provider output derived from a live
+    phone conversation; they are treated as untrusted input, not as
+    safe-by-construction data.
+
+    - Strips the bearer token if it somehow appears verbatim.
+    - Redacts anything that looks like a raw, unmasked E.164 number.
+    - Strips ASCII control characters (defends against terminal
+      escape-sequence or log-injection tricks hidden in provider text).
+    - Length-capped so a single field can't flood a log or blow up the
+      results file.
+    """
     if not text:
         return text
     if api_key:
         text = text.replace(api_key, "[REDACTED_API_KEY]")
-    # Redact anything that looks like a raw E.164 number (10+ digits
+    # Redact anything that looks like a raw E.164 number (7-15 digits
     # after a +) that isn't already masked with •.
     text = re.sub(r"\+\d{7,15}", "[REDACTED_PHONE]", text)
+    # Strip control characters (e.g. ANSI escape sequences, carriage
+    # returns used to spoof terminal output) before anything is ever
+    # printed or persisted.
+    text = _CONTROL_CHARS_RE.sub("", text)
     return text[:500]
+
+
+# Backwards-compatible alias — this function is no longer error-only.
+_sanitize_error_text = _sanitize_output_text
 
 
 @dataclass
@@ -379,23 +401,6 @@ def resolve_result(call: dict) -> tuple[str, dict]:
     return "unclear", structured
 
 
-def _validate_base_url(base_url: str, allow_custom_host: bool) -> tuple[bool, str]:
-    """Refuse to send bearer credentials anywhere but the official
-    HTTPS origin unless the operator explicitly opts into a custom
-    host (e.g. for local/staging testing)."""
-    parts = urlsplit(base_url)
-    if parts.scheme != "https":
-        return False, f"base URL must use https (got {parts.scheme!r})"
-    if parts.hostname != OFFICIAL_HOST and not allow_custom_host:
-        return False, (
-            f"base URL host {parts.hostname!r} does not match the official "
-            f"CALL-E host {OFFICIAL_HOST!r}. Pass --allow-custom-host if this "
-            f"is intentional (e.g. local/staging testing) — otherwise the API "
-            f"key would be sent to an unexpected host."
-        )
-    return True, ""
-
-
 def run(args: argparse.Namespace) -> int:
     appts = load_appointments(Path(args.infile))
     allowlist = load_allowlist(args.allowlist)
@@ -404,16 +409,26 @@ def run(args: argparse.Namespace) -> int:
         dry_run_report(appts, allowlist)
         return 0
 
+    # An allowlist is mandatory for every live run — there is no flag
+    # to skip this. Exact-destination authorization is not optional.
+    if allowlist is None:
+        print(
+            "REFUSING TO RUN: a live run (--confirm) requires --allowlist. "
+            "There is no override for this — see assets/authorized_numbers.example.txt "
+            "for the format and references/safety.md for why.",
+            file=sys.stderr,
+        )
+        return 1
+
     api_key = os.environ.get("CALLE_API_KEY")
     if not api_key:
         print("CALLE_API_KEY is not set — cannot place real calls.", file=sys.stderr)
         return 1
-    base_url = os.environ.get("CALLE_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
 
-    ok, reason = _validate_base_url(base_url, args.allow_custom_host)
-    if not ok:
-        print(f"REFUSING TO RUN: {reason}", file=sys.stderr)
-        return 1
+    # base_url is CALLE_BASE_URL, the module-level constant — it is not
+    # configurable by environment variable or flag. The API key is
+    # never sent anywhere else.
+    base_url = CALLE_BASE_URL
 
     # Always show the dry-run list again immediately before a real run,
     # then require an interactive typed confirmation. --confirm alone
@@ -467,26 +482,31 @@ def run(args: argparse.Namespace) -> int:
 
         final_call = poll_call(base_url, api_key, call_id, args.timeout_seconds)
         status, structured = resolve_result(final_call)
-        print(f"  -> {status}" + (f" ({structured.get('requested_new_time')})"
-                                    if structured.get("requested_new_time") else ""))
+        # Every field below is provider-supplied text derived from a
+        # live phone call — sanitize before it is ever printed or
+        # written, same as an HTTP error body would be.
+        safe_new_time = _sanitize_output_text(str(structured.get("requested_new_time") or ""), api_key)
+        safe_notes = _sanitize_output_text(str(structured.get("notes") or ""), api_key)
+        print(f"  -> {status}" + (f" ({safe_new_time})" if safe_new_time else ""))
         rows.append({
             "recipient_name": appt.recipient_name, "phone_masked": _mask(appt.phone),
             "appointment_time": appt.appointment_time, "call_id": call_id,
             "status": status,
-            "requested_new_time": structured.get("requested_new_time", ""),
-            "notes": structured.get("notes", ""),
+            "requested_new_time": safe_new_time,
+            "notes": safe_notes,
         })
 
         # An ambiguous outcome (poll timeout, or a structured result
         # CALL-E returned that doesn't match a known enum value) means
-        # we don't actually know what happened on that call. Stop the
-        # batch rather than compounding the uncertainty by dialing
-        # more people — unless the operator explicitly opted out.
-        if status in {"pending", "unclear"} and not args.continue_on_ambiguous:
+        # we don't actually know what happened on that call. This is an
+        # unconditional hard stop — there is no flag to continue past
+        # it. Compounding an unresolved outcome by dialing more people
+        # is exactly the failure mode this exists to prevent.
+        if status in {"pending", "unclear"}:
             print(f"\nHALTING BATCH: outcome for {appt.recipient_name} was '{status}' "
                   f"— ambiguous result, not a clean success or failure. Check call "
-                  f"{call_id} in the CALL-E dashboard before resuming. "
-                  f"(Pass --continue-on-ambiguous to disable this safety stop.)")
+                  f"{call_id} in the CALL-E dashboard before running the remaining "
+                  f"recipients as a new, separate batch.")
             batch_halted = True
             break
 
@@ -520,13 +540,8 @@ def main() -> int:
                         "some other way)")
     p.add_argument("--allowlist", default=None,
                    help="path to a phone allowlist file (see assets/authorized_numbers.example.txt); "
-                        "if set, only recipients whose phone exactly matches an entry are called")
-    p.add_argument("--allow-custom-host", action="store_true",
-                   help="allow CALLE_BASE_URL to point somewhere other than the official CALL-E host "
-                        "(only for local/staging testing — bearer credentials are sent to this host)")
-    p.add_argument("--continue-on-ambiguous", action="store_true",
-                   help="do not halt the batch when a call's outcome is ambiguous (pending/unclear); "
-                       "off by default as a safety stop")
+                        "REQUIRED for any --confirm run — only recipients whose phone exactly "
+                        "matches an entry are called. No override exists to skip this.")
     p.add_argument("--webhook-url", default=None, help="optional webhook CALL-E should POST terminal results to")
     p.add_argument("--timeout-seconds", type=int, default=180, help="max seconds to poll each call (default 180)")
     args = p.parse_args()

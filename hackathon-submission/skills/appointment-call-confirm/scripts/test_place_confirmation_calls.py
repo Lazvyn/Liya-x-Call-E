@@ -18,8 +18,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from place_confirmation_calls import (
-    Appointment, _infer_region, _mask, _sanitize_error_text,
-    _stable_idempotency_key, _validate_base_url, normalize_phone_for_match,
+    CALLE_BASE_URL, OFFICIAL_HOST, Appointment, _infer_region, _mask,
+    _sanitize_output_text, _stable_idempotency_key, normalize_phone_for_match,
     resolve_result, validate_e164,
 )
 
@@ -116,40 +116,56 @@ class TestStableIdempotencyKey(unittest.TestCase):
         self.assertNotEqual(_stable_idempotency_key(a1), _stable_idempotency_key(a2))
 
 
-class TestValidateBaseUrl(unittest.TestCase):
-    def test_official_https_host_ok(self):
-        ok, _ = _validate_base_url("https://api.heycall-e.com", allow_custom_host=False)
-        self.assertTrue(ok)
+class TestBaseUrlIsHardcoded(unittest.TestCase):
+    """The base URL is a module constant with no override mechanism —
+    these tests just confirm it's what it should be and hasn't
+    regressed back to something environment/flag-configurable."""
 
-    def test_rejects_http_scheme(self):
-        ok, reason = _validate_base_url("http://api.heycall-e.com", allow_custom_host=False)
-        self.assertFalse(ok)
-        self.assertIn("https", reason)
+    def test_base_url_is_official_https_host(self):
+        self.assertEqual(CALLE_BASE_URL, f"https://{OFFICIAL_HOST}")
+        self.assertTrue(CALLE_BASE_URL.startswith("https://"))
 
-    def test_rejects_unknown_host_by_default(self):
-        ok, reason = _validate_base_url("https://evil.example.com", allow_custom_host=False)
-        self.assertFalse(ok)
-        self.assertIn("official CALL-E host", reason)
-
-    def test_allows_unknown_host_with_explicit_override(self):
-        ok, _ = _validate_base_url("https://staging.example.com", allow_custom_host=True)
-        self.assertTrue(ok)
+    def test_official_host_constant_matches(self):
+        self.assertEqual(OFFICIAL_HOST, "api.heycall-e.com")
 
 
-class TestSanitizeErrorText(unittest.TestCase):
+class TestSanitizeOutputText(unittest.TestCase):
+    """Sanitization is applied uniformly to ALL provider-supplied text
+    (error bodies, notes, requested_new_time) — not just HTTP errors."""
+
     def test_redacts_api_key(self):
-        text = _sanitize_error_text("auth failed for key sk_live_abc123", api_key="sk_live_abc123")
+        text = _sanitize_output_text("auth failed for key sk_live_abc123", api_key="sk_live_abc123")
         self.assertNotIn("sk_live_abc123", text)
         self.assertIn("REDACTED_API_KEY", text)
 
     def test_redacts_raw_phone_number(self):
-        text = _sanitize_error_text("could not reach +14155550101", api_key="")
+        text = _sanitize_output_text("could not reach +14155550101", api_key="")
         self.assertNotIn("+14155550101", text)
         self.assertIn("REDACTED_PHONE", text)
 
     def test_truncates_long_text(self):
-        text = _sanitize_error_text("x" * 1000, api_key="")
+        text = _sanitize_output_text("x" * 1000, api_key="")
         self.assertLessEqual(len(text), 500)
+
+    def test_strips_control_characters(self):
+        # Embedded ANSI/control characters (e.g. from a manipulated
+        # voice-call transcript) must never reach a terminal or a
+        # results file unsanitized.
+        text = _sanitize_output_text("confirmed\x1b[31mFAKE ALERT\x1b[0m\x07", api_key="")
+        self.assertNotIn("\x1b", text)
+        self.assertNotIn("\x07", text)
+
+    def test_applies_to_notes_and_requested_new_time_fields(self):
+        # Simulates what run() does with structured_result fields —
+        # both must go through sanitization, not just error paths.
+        structured = {
+            "requested_new_time": "2026-09-09T11:30:00+00:00\x1b[2Jinjected",
+            "notes": "caller mentioned +14155550101 as a callback number",
+        }
+        safe_time = _sanitize_output_text(str(structured["requested_new_time"]))
+        safe_notes = _sanitize_output_text(str(structured["notes"]))
+        self.assertNotIn("\x1b", safe_time)
+        self.assertNotIn("+14155550101", safe_notes)
 
 
 class TestResolveResult(unittest.TestCase):

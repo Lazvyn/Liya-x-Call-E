@@ -1975,13 +1975,6 @@ class LiyaUI:
     def on_text_command(self, cb):
         self._win.on_text_command = cb
 
-    # ── state / log ───────────────────────────────────────────────────────────
-    def set_state(self, state: str):
-        self._win._state_sig.emit(state)
-
-    def write_log(self, text: str):
-        self._win._log_sig.emit(text)
-
     # ── boot gate ─────────────────────────────────────────────────────────────
     def wait_for_api_key(self):
         while not self._win._ready:
