@@ -37,7 +37,7 @@ key, so any host that adopts this skill can run it standalone.
    hackathon (see `../DEVPOST_SUBMISSION.md` in this repo for the rest
    of the submission text).
 
-**PR URL:** https://github.com/CALLE-AI/awesome-phone-call-agents/pull/310
+**PR URL:** https://github.com/CALLE-AI/awesome-phone-call-agents/pull/294
 ## Why this scope, not the whole Liya agent
 
 Liya's `actions/call_e.py` (in the main repo) already wraps CALL-E's
