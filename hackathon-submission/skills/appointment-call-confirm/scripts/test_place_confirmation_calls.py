@@ -14,14 +14,16 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from place_confirmation_calls import (
     CALLE_BASE_URL, OFFICIAL_HOST, Appointment, _infer_region, _mask,
     _sanitize_output_text, _stable_idempotency_key, normalize_phone_for_match,
-    resolve_result, validate_e164,
+    place_call, resolve_result, validate_e164,
 )
+import requests
 
 
 class TestMask(unittest.TestCase):
@@ -155,6 +157,38 @@ class TestSanitizeOutputText(unittest.TestCase):
         self.assertNotIn("\x1b", text)
         self.assertNotIn("\x07", text)
 
+    def test_redacts_parenthesized_area_code_format(self):
+        text = _sanitize_output_text("call back at (415) 555-0101 please", api_key="")
+        self.assertNotIn("415) 555-0101", text)
+        self.assertIn("REDACTED_PHONE", text)
+
+    def test_redacts_dashed_national_format(self):
+        text = _sanitize_output_text("reach me at 415-555-0101", api_key="")
+        self.assertNotIn("415-555-0101", text)
+        self.assertIn("REDACTED_PHONE", text)
+
+    def test_redacts_dotted_national_format(self):
+        text = _sanitize_output_text("try 415.555.0101 instead", api_key="")
+        self.assertNotIn("415.555.0101", text)
+        self.assertIn("REDACTED_PHONE", text)
+
+    def test_redacts_00_prefixed_international_format(self):
+        text = _sanitize_output_text("dial 0014155550101 from abroad", api_key="")
+        self.assertNotIn("0014155550101", text)
+        self.assertIn("REDACTED_PHONE", text)
+
+    def test_redacts_bare_national_length_digit_run(self):
+        text = _sanitize_output_text("number is 4155550101 confirmed", api_key="")
+        self.assertNotIn("4155550101", text)
+        self.assertIn("REDACTED_PHONE", text)
+
+    def test_does_not_mangle_already_masked_numbers(self):
+        # A properly masked number (broken up by bullet characters) must
+        # survive sanitization unchanged — it's already safe to display.
+        text = _sanitize_output_text("confirmed for +1415•••••01", api_key="")
+        self.assertIn("+1415•••••01", text)
+        self.assertNotIn("REDACTED_PHONE", text)
+
     def test_applies_to_notes_and_requested_new_time_fields(self):
         # Simulates what run() does with structured_result fields —
         # both must go through sanitization, not just error paths.
@@ -203,6 +237,62 @@ class TestResolveResult(unittest.TestCase):
         call = {"status": "completed"}
         status, _ = resolve_result(call)
         self.assertEqual(status, "unclear")
+
+
+class TestPlaceCallAmbiguity(unittest.TestCase):
+    """A create-call timeout, dropped connection, or an accepted
+    (HTTP 2xx) response with no call id must all be flagged
+    _ambiguous — never recorded as a clean 'failed' outcome that lets
+    the batch continue. A real HTTPError (CALL-E explicitly rejecting
+    the request) is a genuine failure, not ambiguous."""
+
+    def _appt(self):
+        return Appointment(
+            recipient_name="Alex Rivera", phone="+14155550101",
+            appointment_time="2026-09-08T15:00:00-04:00",
+            context="annual checkup", business_name="Sunrise Clinic",
+        )
+
+    @patch("place_confirmation_calls.requests.post")
+    def test_timeout_is_ambiguous(self, mock_post):
+        mock_post.side_effect = requests.exceptions.Timeout("timed out")
+        result = place_call(CALLE_BASE_URL, "fake_key", self._appt(), None)
+        self.assertTrue(result.get("_ambiguous"))
+
+    @patch("place_confirmation_calls.requests.post")
+    def test_connection_error_is_ambiguous(self, mock_post):
+        mock_post.side_effect = requests.exceptions.ConnectionError("dropped")
+        result = place_call(CALLE_BASE_URL, "fake_key", self._appt(), None)
+        self.assertTrue(result.get("_ambiguous"))
+
+    @patch("place_confirmation_calls.requests.post")
+    def test_accepted_response_without_id_is_ambiguous(self, mock_post):
+        resp = MagicMock()
+        resp.raise_for_status.return_value = None
+        resp.json.return_value = {"status": "queued"}  # no "id" field
+        mock_post.return_value = resp
+        result = place_call(CALLE_BASE_URL, "fake_key", self._appt(), None)
+        self.assertTrue(result.get("_ambiguous"))
+
+    @patch("place_confirmation_calls.requests.post")
+    def test_explicit_rejection_is_not_ambiguous(self, mock_post):
+        resp = MagicMock()
+        resp.json.return_value = {"error": {"message": "invalid phone number"}}
+        http_err = requests.exceptions.HTTPError(response=resp)
+        mock_post.side_effect = http_err
+        result = place_call(CALLE_BASE_URL, "fake_key", self._appt(), None)
+        self.assertFalse(result.get("_ambiguous"))
+        self.assertIn("_local_error", result)
+
+    @patch("place_confirmation_calls.requests.post")
+    def test_successful_response_with_id_is_not_ambiguous(self, mock_post):
+        resp = MagicMock()
+        resp.raise_for_status.return_value = None
+        resp.json.return_value = {"id": "call_8f2a1c", "status": "queued"}
+        mock_post.return_value = resp
+        result = place_call(CALLE_BASE_URL, "fake_key", self._appt(), None)
+        self.assertFalse(result.get("_ambiguous", False))
+        self.assertEqual(result.get("id"), "call_8f2a1c")
 
 
 if __name__ == "__main__":

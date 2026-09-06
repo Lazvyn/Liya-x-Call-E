@@ -77,11 +77,14 @@ rule below is enforced in `scripts/place_confirmation_calls.py` itself
 - **All provider-supplied text is sanitized before it is ever printed
   or written to the results file — not just error bodies.** This
   applies uniformly to HTTP error details, `notes`, and
-  `requested_new_time`: the API key (if it somehow appears), any raw
-  unmasked phone number, and ASCII control characters (which could
-  otherwise be used to spoof terminal output or inject log entries)
-  are all stripped, and the text is length-capped. CALL-E's structured
-  output is derived from a live phone conversation and is treated as
+  `requested_new_time`: the API key (if it somehow appears), any
+  phone-like number in any common format — plus-prefixed E.164,
+  00-prefixed international, parenthesized area codes, dashed/dotted/
+  spaced national formats, or a bare run of digits — and ASCII control
+  characters (which could otherwise be used to spoof terminal output
+  or inject log entries) are all stripped, and the text is
+  length-capped. CALL-E's structured output is derived from a live
+  phone conversation and is treated as
   untrusted input, not safe-by-construction data.
 
 ## After the run
@@ -95,11 +98,22 @@ rule below is enforced in `scripts/place_confirmation_calls.py` itself
   window ends is reported as `pending`, with its `call_id`, not as a
   result.
 - **An ambiguous outcome is an unconditional hard stop — there is no
-  override.** If any call resolves to `pending` (poll timeout) or
-  `unclear` (a structured result CALL-E returned that doesn't match a
-  known status), the script stops before dialing the remaining
-  recipients and tells the operator to check that specific `call_id`
-  in the CALL-E dashboard before running the rest as a new batch.
+  override.** This covers both ends of a call's lifecycle:
+  - **At creation**: a request timeout, a dropped connection, or an
+    HTTP 2xx response with no call id all mean CALL-E may or may not
+    have actually created the call — there is no way to tell from the
+    client side. None of these are recorded as a clean `failed` row;
+    all three halt the batch immediately.
+  - **At polling**: a call resolving to `pending` (poll timeout) or
+    `unclear` (a structured result that doesn't match a known status)
+    halts the batch the same way.
+  In every case the script stops before dialing the remaining
+  recipients and tells the operator what to check in the CALL-E
+  dashboard before running the rest as a new, separate batch. A
+  genuine, explicit rejection from CALL-E (e.g. an invalid-phone
+  validation error) is a real failure, not an ambiguous one — that
+  case is recorded as `failed` and the batch continues, since CALL-E
+  told us clearly that no call was created.
 - Sensitive appointment context (medical, legal, financial) is treated
   as logistics only: the call confirms a time slot, and the script's
   task template never asks the recipient to discuss the substance of

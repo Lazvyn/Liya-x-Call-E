@@ -210,6 +210,22 @@ def _stable_idempotency_key(appt: "Appointment") -> str:
 
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
+# Multiple phone-like patterns, checked in order from most to least
+# specific, so a broader pattern doesn't eat into a more specific
+# match first. Covers far more than plus-prefixed E.164:
+#   - E.164:                    +14155550101
+#   - 00-prefixed international: 0014155550101
+#   - Parenthesized area code:   (415) 555-0101
+#   - Dashed/dotted/spaced:      415-555-0101 / 415.555.0101 / 415 555 0101
+#   - Bare national-length runs: 4155550101 (10-15 consecutive digits)
+_PHONE_PATTERNS = [
+    re.compile(r"\+\d{7,15}"),
+    re.compile(r"\b00\d{7,15}\b"),
+    re.compile(r"\(\d{2,4}\)[\s.-]?\d{3,4}[\s.-]?\d{3,5}"),
+    re.compile(r"\b\d{2,4}[\s.-]\d{3,4}[\s.-]\d{3,5}\b"),
+    re.compile(r"\b\d{10,15}\b"),
+]
+
 
 def _sanitize_output_text(text: str, api_key: str = "") -> str:
     """Deep-sanitize ANY provider-supplied text before it is ever
@@ -221,7 +237,10 @@ def _sanitize_output_text(text: str, api_key: str = "") -> str:
     safe-by-construction data.
 
     - Strips the bearer token if it somehow appears verbatim.
-    - Redacts anything that looks like a raw, unmasked E.164 number.
+    - Redacts phone-like numbers in any common format, not only
+      plus-prefixed E.164 — parenthesized area codes, dashed/dotted/
+      spaced separators, 00-prefixed international, and bare
+      national-length digit runs are all caught.
     - Strips ASCII control characters (defends against terminal
       escape-sequence or log-injection tricks hidden in provider text).
     - Length-capped so a single field can't flood a log or blow up the
@@ -231,9 +250,8 @@ def _sanitize_output_text(text: str, api_key: str = "") -> str:
         return text
     if api_key:
         text = text.replace(api_key, "[REDACTED_API_KEY]")
-    # Redact anything that looks like a raw E.164 number (7-15 digits
-    # after a +) that isn't already masked with •.
-    text = re.sub(r"\+\d{7,15}", "[REDACTED_PHONE]", text)
+    for pattern in _PHONE_PATTERNS:
+        text = pattern.sub("[REDACTED_PHONE]", text)
     # Strip control characters (e.g. ANSI escape sequences, carriage
     # returns used to spoof terminal output) before anything is ever
     # printed or persisted.
@@ -347,8 +365,35 @@ def place_call(base_url: str, api_key: str, appt: Appointment, webhook_url: Opti
     try:
         resp = requests.post(f"{base_url}/v1/calls", headers=headers, json=payload, timeout=30)
         resp.raise_for_status()
-        return resp.json()
+        body = resp.json()
+        if not body.get("id"):
+            # CALL-E returned HTTP 2xx (request accepted) but no call id
+            # to track it by. This is NOT a clean failure — the call may
+            # well have been created and we simply can't poll it. Treat
+            # it the same as a poll-time ambiguous outcome: an
+            # unconditional hard stop, not a "failed" row that lets the
+            # batch continue.
+            return {"_ambiguous": True, "_local_error":
+                    "CALL-E accepted the request (HTTP 2xx) but returned no call id "
+                    "— cannot confirm or track whether this call was actually created"}
+        return body
+    except requests.exceptions.Timeout as e:
+        # The create request timed out. CALL-E may or may not have
+        # created the call on its end — we genuinely don't know.
+        # Ambiguous, not a clean failure.
+        return {"_ambiguous": True, "_local_error":
+                f"create-call request timed out — CALL-E may or may not have "
+                f"created the call: {_sanitize_output_text(str(e), api_key)}"}
+    except requests.exceptions.ConnectionError as e:
+        # Connection dropped mid-request — same ambiguity as a timeout:
+        # the call may have been created before the connection died.
+        return {"_ambiguous": True, "_local_error":
+                f"connection dropped while creating the call — CALL-E may or may "
+                f"not have created the call: {_sanitize_output_text(str(e), api_key)}"}
     except requests.exceptions.HTTPError as e:
+        # A real HTTP error response (4xx/5xx with a body CALL-E sent
+        # back) is a genuine, explicit rejection — not ambiguous. CALL-E
+        # told us clearly that it did not create the call.
         detail = ""
         try:
             body = e.response.json()
@@ -362,9 +407,13 @@ def place_call(base_url: str, api_key: str, appt: Appointment, webhook_url: Opti
                 ) + ")"
         except Exception:
             detail = e.response.text[:200] if e.response is not None else str(e)
-        return {"_local_error": f"CALL-E rejected the call: {_sanitize_error_text(detail or str(e), api_key)}"}
+        return {"_local_error": f"CALL-E rejected the call: {_sanitize_output_text(detail or str(e), api_key)}"}
     except requests.exceptions.RequestException as e:
-        return {"_local_error": f"could not reach CALL-E: {_sanitize_error_text(str(e), api_key)}"}
+        # Any other unexpected transport-level failure. Default to
+        # ambiguous rather than failed — we have no positive
+        # confirmation either way, so the conservative assumption wins.
+        return {"_ambiguous": True, "_local_error":
+                f"could not reach CALL-E: {_sanitize_output_text(str(e), api_key)}"}
 
 
 def poll_call(base_url: str, api_key: str, call_id: str, timeout_seconds: int) -> dict:
@@ -460,7 +509,31 @@ def run(args: argparse.Namespace) -> int:
         print(f"\nCalling {appt.recipient_name} ({_mask(appt.phone)}) re: {appt.context}")
         created = place_call(base_url, api_key, appt, args.webhook_url)
 
+        if created.get("_ambiguous"):
+            # A create-time timeout, dropped connection, or an accepted
+            # response with no call id all mean the same thing: we do
+            # not know whether CALL-E actually placed this call. This
+            # is an unconditional hard stop — same as a poll-time
+            # ambiguous outcome — not a "failed" row that lets the
+            # batch continue to the next recipient.
+            print(f"  AMBIGUOUS: {created['_local_error']}")
+            rows.append({
+                "recipient_name": appt.recipient_name, "phone_masked": _mask(appt.phone),
+                "appointment_time": appt.appointment_time, "call_id": "",
+                "status": "pending", "detail": created["_local_error"],
+            })
+            print(f"\nHALTING BATCH: create-call outcome for {appt.recipient_name} was "
+                  f"ambiguous — check the CALL-E dashboard for a call to "
+                  f"{_mask(appt.phone)} around this time before running the "
+                  f"remaining recipients as a new, separate batch.")
+            batch_halted = True
+            break
+
         if "_local_error" in created:
+            # A genuine, explicit rejection from CALL-E (e.g. invalid
+            # phone, validation error) — CALL-E told us clearly it did
+            # not create the call. This is a real failure, not an
+            # ambiguous one, so the batch continues.
             print(f"  FAILED: {created['_local_error']}")
             rows.append({
                 "recipient_name": appt.recipient_name, "phone_masked": _mask(appt.phone),
@@ -469,16 +542,7 @@ def run(args: argparse.Namespace) -> int:
             })
             continue
 
-        call_id = created.get("id")
-        if not call_id:
-            detail = _sanitize_error_text(json.dumps(created), api_key)
-            print(f"  FAILED: CALL-E did not return a call id: {detail}")
-            rows.append({
-                "recipient_name": appt.recipient_name, "phone_masked": _mask(appt.phone),
-                "appointment_time": appt.appointment_time, "call_id": "",
-                "status": "failed", "detail": "no call_id returned",
-            })
-            continue
+        call_id = created["id"]
 
         final_call = poll_call(base_url, api_key, call_id, args.timeout_seconds)
         status, structured = resolve_result(final_call)
