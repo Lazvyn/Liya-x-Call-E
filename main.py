@@ -491,12 +491,30 @@ TOOL_DECLARATIONS = [
             "type": "OBJECT",
             "properties": {
                 "task":      {"type": "STRING",  "description": "Plain-language description of what the call should accomplish, e.g. 'Confirm whether Asha Rao can attend her 3pm appointment Saturday, or ask to reschedule.'"},
-                "phone":     {"type": "STRING",  "description": "Recipient phone number, E.164 preferred (e.g. +12025550147)."},
-                "region":    {"type": "STRING",  "description": "Recipient region code CALL-E supports (US, IN, SG, MY, AE, AU, CA, GB, VN, DE, JP, FR, MX, BR, ID, PH, KE). Default: US."},
+                "phone":     {"type": "STRING",  "description": "Recipient phone number in full E.164 form, e.g. +12025550147 or +919876543210. If the user gives you a bare number with no leading '+' and no country mentioned, ASK which country it belongs to before calling this tool — do not guess by just adding a '+' in front, since that gets misread as a different country's code and the call will be rejected."},
+                "region":    {"type": "STRING",  "description": "Recipient region code CALL-E supports (US, IN, SG, MY, AE, AU, CA, GB, VN, DE, JP, FR, MX, BR, ID, PH, KE). MUST match the country of the phone number above, not default to US when the number is clearly from elsewhere (e.g. use IN for a Indian number)."},
                 "locale":    {"type": "STRING",  "description": "Spoken language/locale for the call, e.g. en-US, en-IN."},
                 "confirmed": {"type": "BOOLEAN", "description": "Set true ONLY after the user has explicitly confirmed out loud that this specific call should be placed."},
             },
             "required": ["task", "phone", "confirmed"]
+        }
+    },
+    {
+        "name": "call_status",
+        "description": (
+            "Checks the current status/result of a phone call that was previously placed with "
+            "call_e (e.g. if the user asks 'did that call go through', 'what happened with that "
+            "call', or 'check on that call'). call_e's live mode fires the call and returns "
+            "immediately without waiting, so this is the only way to learn what actually "
+            "happened. If the user doesn't give a call id, use the id from the most recent "
+            "call_e call in this conversation."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "call_id": {"type": "STRING", "description": "The call id returned when the call was placed. If omitted, the most recently placed call id in this session is used."},
+            },
+            "required": []
         }
     },
 ]
@@ -515,7 +533,8 @@ class LiyaLive:
         self.ui.on_text_command = self._on_text_command
         self._turn_done_event: asyncio.Event | None = None
         self._greeted        = False
-        self._last_call_e    = (None, 0.0)  # (task, phone) signature, timestamp
+        self._last_call_e    = (None, 0.0)  # last called phone (digits only), timestamp
+        self._last_call_id   = None         # call_id of the most recently placed call
 
     def _on_text_command(self, text: str):
         if not self._loop or not self.session:
@@ -536,8 +555,23 @@ class LiyaLive:
     def speak(self, text: str):
         if not self._loop or not self.session:
             return
+        # NOTE: send_realtime_input(text=...) is the same channel real user
+        # text/audio comes in on (see _on_text_command below) — the model
+        # treats it as something the USER said, not as Liya's own speech.
+        # Sending a bare status string like "Placing the call now, sir."
+        # through here gets read by the model as a confusing, out-of-place
+        # user turn instead of being spoken aloud, and can collide with a
+        # tool call that's still awaiting its send_tool_response. Wrapping
+        # it as an explicit [SYSTEM] instruction (the same trick already
+        # used for the launch greeting below) makes the model actually
+        # say the message instead of reacting to it as user input.
+        payload = text if text.lstrip().startswith("[SYSTEM]") else (
+            f"[SYSTEM] Say the following to the user now, out loud, in your "
+            f"own natural voice (paraphrase slightly if needed, but keep the "
+            f"meaning): \"{text}\""
+        )
         asyncio.run_coroutine_threadsafe(
-            self.session.send_realtime_input(text=text),
+            self.session.send_realtime_input(text=payload),
             self._loop
         )
 
@@ -662,15 +696,23 @@ class LiyaLive:
                         "confirmed=true if they clearly say yes."
                     )
                 else:
-                    sig      = (str(args.get("task", "")).strip(), str(args.get("phone", "")).strip())
+                    # Dedupe by phone number alone, not (task, phone) — a
+                    # slightly reworded task ("Ask Tom if..." vs "Confirm
+                    # if Tom...") for the SAME recipient moments later is
+                    # still almost always an accidental repeat, not a
+                    # deliberate second call, and exact-text matching let
+                    # that slip through and dial the same person twice.
+                    sig      = "".join(c for c in str(args.get("phone", "")) if c.isdigit())
                     now      = time.time()
                     last_sig, last_time = self._last_call_e
-                    if sig == last_sig and (now - last_time) < 600:
+                    if sig and sig == last_sig and (now - last_time) < 600:
                         result = (
-                            f"Skipped — a call with this exact task and number was already "
-                            f"placed {int(now - last_time)}s ago, so this looks like an "
-                            f"accidental repeat rather than a new request. If the user really "
-                            f"wants to call again, ask them to confirm again explicitly."
+                            f"Skipped — a call to this same number was already placed "
+                            f"{int(now - last_time)}s ago (the task wording changed, but "
+                            f"it's the same recipient), so this looks like an accidental "
+                            f"repeat rather than a deliberate second call. If the user "
+                            f"really wants to call this number again right now, ask them "
+                            f"to confirm again explicitly."
                         )
                     else:
                         self._last_call_e = (sig, now)
@@ -687,6 +729,23 @@ class LiyaLive:
                                             session_memory=None, speak=self.speak)
                         )
                         result = _tool_text(r) or f"Call to {args.get('phone')} started."
+                        m = re.search(r"call id ([\w\-]+)", result)
+                        if m:
+                            self._last_call_id = m.group(1)
+
+            elif name == "call_status":
+                from actions.call_e import call_status
+                call_id = str(args.get("call_id") or "").strip() or self._last_call_id
+                if not call_id:
+                    result = (
+                        "No call id to check yet — no call has been placed in this "
+                        "session. Place a call first, or give me the call id directly."
+                    )
+                else:
+                    r = await loop.run_in_executor(
+                        None, lambda: call_status(parameters={"call_id": call_id})
+                    )
+                    result = _tool_text(r) or f"Checked call {call_id}."
 
             elif name == "reminder":
                 r = await loop.run_in_executor(None, lambda: reminder(parameters=args, response=None, player=self.ui))
@@ -921,7 +980,9 @@ class LiyaLive:
             http_options={"api_version": "v1beta"}
         )
 
+        backoff = 3
         while True:
+            connected_at = None
             try:
                 print("[LIYA] Connecting...")
                 self.ui.set_state("THINKING")
@@ -936,6 +997,7 @@ class LiyaLive:
                     self.audio_in_queue = asyncio.Queue()
                     self.out_queue      = asyncio.Queue(maxsize=10)
                     self._turn_done_event = asyncio.Event()
+                    connected_at = time.time()
 
                     print("[LIYA] Connected.")
                     self.ui.set_state("LISTENING")
@@ -955,8 +1017,20 @@ class LiyaLive:
                 traceback.print_exc()
             self.set_speaking(False)
             self.ui.set_state("THINKING")
-            print("[LIYA] Reconnecting in 3s...")
-            await asyncio.sleep(3)
+
+            # A session that survived a reasonable while before dying is a
+            # different situation than one being bounced immediately on
+            # every attempt (e.g. rate limit / quota / policy close) — only
+            # reset the backoff once we've proven the connection is actually
+            # holding, so a fast-failing loop backs off instead of hammering
+            # the API and getting closed again for the same reason.
+            if connected_at is not None and (time.time() - connected_at) > 30:
+                backoff = 3
+            else:
+                backoff = min(backoff * 2, 60)
+
+            print(f"[LIYA] Reconnecting in {backoff}s...")
+            await asyncio.sleep(backoff)
 
 
 def main():

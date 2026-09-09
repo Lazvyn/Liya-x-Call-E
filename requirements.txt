@@ -11,6 +11,7 @@ uvicorn[standard]>=0.29
 pydantic>=2.0
 numpy>=1.26   # used by actions/screen_processor.py, youtube_video.py, game_updater.py
 requests>=2.28   # used by demo/run_demo_http.py
+phonenumbers>=8.13  # actions/call_e.py validates/normalizes numbers before calling CALL-E
 ddgs>=9.0        # actions/web_search.py's fallback search backend when Gemini quota/grounding is unavailable
 playwright>=1.44  # used by actions/browser_control.py; setup.py runs playwright install on top of this
 

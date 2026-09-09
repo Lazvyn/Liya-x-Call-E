@@ -203,6 +203,112 @@ def _summarize(call: dict, task: str, phone: str) -> str:
     return " ".join(lines)
 
 
+def call_status(
+    parameters: dict,
+    response=None,
+    player=None,
+    session_memory=None,
+    speak=None,
+):
+    """Check the status/result of a call CALL-E was previously asked to
+    place. Needed because `call_e(..., wait=False)` (the fire-and-forget
+    mode the live voice app uses) only confirms CALL-E *accepted* the
+    request — it does not confirm the phone ever rang or how the call
+    ended. This is the missing other half of that: given the call_id
+    returned at creation time, fetch the current state.
+
+    parameters:
+        call_id  str, required — the id returned when the call was created.
+    """
+    params = parameters or {}
+    call_id = str(params.get("call_id", "")).strip()
+    if not call_id:
+        return fail("Please specify the call_id to check (returned when the call was placed).")
+
+    api_key = _get_calle_api_key()
+    if not api_key:
+        return fail(
+            "CALL-E is not configured: set calle_api_key in "
+            "config/api_keys.json, or the CALLE_API_KEY environment "
+            "variable."
+        )
+
+    base_url = _get_calle_base_url().rstrip("/")
+
+    try:
+        call = _get_call(base_url, api_key, call_id)
+    except requests.exceptions.HTTPError as e:
+        detail = e.response.text[:200] if e.response is not None else str(e)
+        return fail(f"CALL-E couldn't return that call ({call_id}): {detail}")
+    except requests.exceptions.RequestException as e:
+        return fail(f"Could not reach CALL-E: {e}")
+
+    task  = call.get("task", "") if isinstance(call, dict) else ""
+    phone = ""
+    recipients = call.get("recipients") if isinstance(call, dict) else None
+    if recipients and isinstance(recipients, list):
+        phone = (recipients[0].get("phones") or [""])[0]
+
+    summary = _summarize(call, task, phone)
+    status = str(call.get("status", "")).lower()
+    if status in {"failed", "canceled", "cancelled", "error"}:
+        return fail(summary)
+    return ok(summary)
+
+
+def _normalize_phone(phone: str, region: str) -> tuple[Optional[str], Optional[str]]:
+    """Validate/normalize a phone number before it ever reaches CALL-E.
+
+    Returns (e164_number, None) on success, or (None, error_message) on
+    failure. This exists because CALL-E rejecting a malformed number comes
+    back as a generic "phone number is invalid" message with no indication
+    of *why* — most commonly because a bare 10-digit number got a "+"
+    stuck on the front and was read as a different country's code entirely
+    (e.g. a 10-digit Indian number typed as "9612412008" becomes
+    "+9612412008", which parses as Lebanon (+961) plus 7 leftover digits —
+    too short to be real, and definitely not the intended number).
+    """
+    phone = (phone or "").strip()
+    if not phone:
+        return None, "No phone number given."
+
+    try:
+        import phonenumbers
+    except ImportError:
+        # Library not installed — fall back to a much weaker sanity check
+        # rather than blocking calls entirely.
+        digits = "".join(c for c in phone if c.isdigit())
+        if not phone.startswith("+") or len(digits) < 8:
+            return None, (
+                f"'{phone}' doesn't look like a complete phone number. "
+                f"Please give the full number with a country code, e.g. "
+                f"+91XXXXXXXXXX for India or +1XXXXXXXXXX for the US."
+            )
+        return phone, None
+
+    try:
+        parsed = phonenumbers.parse(phone, region or "US")
+    except phonenumbers.NumberParseException:
+        return None, (
+            f"Couldn't read '{phone}' as a phone number. Please give the "
+            f"full number including its country code (e.g. +91XXXXXXXXXX "
+            f"for India)."
+        )
+
+    if not phonenumbers.is_valid_number(parsed):
+        region_name = phonenumbers.region_code_for_number(parsed) or region or "US"
+        return None, (
+            f"'{phone}' isn't a valid number for region '{region_name}'. "
+            f"If this number belongs to a different country than that, say "
+            f"which country (or give it as a full E.164 number, e.g. "
+            f"+91XXXXXXXXXX for India) instead of a bare 10-digit number — "
+            f"a leading '+' plus a raw local number gets misread as a "
+            f"different country's code."
+        )
+
+    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164), None
+
+
 def call_e(
     parameters: dict,
     response=None,
@@ -261,6 +367,11 @@ def call_e(
     metadata     = params.get("metadata")
     wait         = bool(params.get("wait", True))
     timeout_seconds = int(params.get("timeout_seconds", 180))
+
+    normalized_phone, phone_error = _normalize_phone(phone, region)
+    if phone_error:
+        return fail(phone_error)
+    phone = normalized_phone
 
     idempotency_key = str(params.get("idempotency_key") or uuid.uuid4())
 
