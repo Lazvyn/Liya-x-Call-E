@@ -29,7 +29,11 @@ pdfplumber
 pandas
 pydub
 python-pptx
+python-docx    # actions/file_processor.py's PDF<->Word conversion (guarded, but silently degrades without it)
 Pillow
 mss
+opencv-python  # actions/screen_processor.py (guarded via _CV2 flag, but loses that feature without it)
 send2trash
 youtube_transcript_api
+pycaw; sys_platform == 'win32'       # actions/computer_settings.py volume control on Windows (guarded, falls back to keypress without it)
+comtypes; sys_platform == 'win32'    # required by pycaw above
