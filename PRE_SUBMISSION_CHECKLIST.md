@@ -1,28 +1,25 @@
 # Pre-submission checklist — CALL-E: Your Code Is Calling
 
-Deadline: **Sep 14, 2026 @ 9:15pm GMT+5:30**. Everything below is
-outstanding as of this review — the skill, code, and evidence are
-done; what's left is submission mechanics.
+Deadline: **Sep 14, 2026 @ 9:15pm GMT+5:30**.
 
-## Fixed in this pass
+## Done
 - [x] `hackathon-submission/skills/appointment-call-confirm/assets/sample_appointments.csv`
-      now has three appointments (US/SG/IN), matching what
-      `JUDGE_TESTING.md` step 2 tells a reviewer to expect. Verified
-      the dry-run actually prints all three with correct region
-      inference for each.
+      has three appointments (US/SG/IN); dry-run prints all three with
+      correct region inference for each.
+- [x] **Forked** `CALLE-AI/awesome-phone-call-agents`, copied the skill
+      in, ran `scripts/validate_repository.py` (passed), opened the PR.
+- [x] **PR merged**: https://github.com/CALLE-AI/awesome-phone-call-agents/pull/294
+- [x] PR URL is in `DEVPOST_SUBMISSION.md` and `hackathon-submission/README.md`.
+- [x] CALL-E account email is in `DEVPOST_SUBMISSION.md`.
+- [x] *(Optional, second entry)* A separate app-based contribution,
+      [`apps/python/liya-appointment-confirm`](https://github.com/CALLE-AI/awesome-phone-call-agents/pull/394),
+      is also open — same underlying CALL-E integration, different
+      contribution format (standalone CLI app vs. Agent Skill). Rules
+      permit multiple submissions as long as each is substantially
+      different, which this is (app vs. skill, dry-run/confirm flow
+      vs. batch CSV runner).
 
 ## Still required — cannot be done without your GitHub/CALL-E account
-- [ ] **Fork** [`CALLE-AI/awesome-phone-call-agents`](https://github.com/CALLE-AI/awesome-phone-call-agents).
-- [ ] **Copy** `hackathon-submission/skills/appointment-call-confirm/`
-      into that fork's `skills/appointment-call-confirm/`.
-- [ ] **Run that repo's validator** (`python3 scripts/validate_repository.py`)
-      before opening the PR.
-- [ ] **Open the PR** against `main`, following that repo's branch
-      naming convention (`docs/git-naming-conventions.md`).
-- [ ] **Paste the PR URL** into:
-  - `DEVPOST_SUBMISSION.md` (line ~9)
-  - `hackathon-submission/README.md` (line ~40)
-  - the Devpost submission form
 - [ ] **Record a demo video** (≤3 minutes, public on YouTube or
       Vimeo). Suggested beat sheet, all runnable with the fixed
       3-row sample data:
@@ -35,9 +32,10 @@ done; what's left is submission mechanics.
      the duplicate-call safety fix (this is the strongest
      differentiator — don't cut it).
   - Paste the video URL into `DEVPOST_SUBMISSION.md`.
-- [ ] **Add your CALL-E account email** to `DEVPOST_SUBMISSION.md`
-      and the Devpost form.
-- [ ] *(Optional)* Demo app URL, if you stand one up.
+- [ ] **Submit the Devpost form itself** (`call-e.devpost.com`) —
+      writing the PR URL and email into these markdown files doesn't
+      submit anything; the actual form still needs to be filled in
+      and submitted separately, before the deadline.
 - [ ] *(Optional, separate prize track)* Submit the CALL-E Feedback
       Survey during the Feedback Period for Most Valuable Feedback
       eligibility — one per person, doesn't affect the main prizes.
@@ -49,3 +47,4 @@ done; what's left is submission mechanics.
 - Double-check the sample CSV's phone numbers are fictitious/test
   numbers only if you swap in a real one for the video — don't call a
   number without that person's consent.
+

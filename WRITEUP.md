@@ -1,8 +1,22 @@
-# Liya + `appointment-call-confirm` — Write-up
+# Liya + `appointment-call-confirm` â€” Write-up
+
+> **Note on current repo state:** this write-up documents Liya as it
+> was built (a ~16-tool autonomous agent with CALL-E as one tool among
+> many). Since then, and separately from `appointment-call-confirm`
+> (which was already extracted and submitted before this change), this
+> repo itself was trimmed down to calling-only scope â€” everything
+> except `call_e`/`call_status`/`save_memory` was removed from
+> `actions/`, `main.py`'s tool surface, and `agent/adk_tools.py` â€” so
+> the repo's own README matches the "well-scoped" story rather than
+> describing a generalist agent. The architecture/history below is
+> accurate as development history; for the current tool surface, see
+> [`README.md`](README.md) instead. The "Designated demo scenario" at
+> the bottom of this file no longer runs (it depended on tools that no
+> longer exist) â€” see its note for the current equivalent.
 
 **Hackathon: CALL-E: Your Code Is Calling.** The actual judged
 submission is [`hackathon-submission/skills/appointment-call-confirm/`](hackathon-submission/skills/appointment-call-confirm/)
-— a standalone Agent Skill, PR-ready for
+â€” a standalone Agent Skill, PR-ready for
 [`CALLE-AI/awesome-phone-call-agents`](https://github.com/CALLE-AI/awesome-phone-call-agents),
 that solves one specific real-world phone-work problem: a service
 business's next-day appointment list going unconfirmed because the
@@ -17,7 +31,7 @@ is real, tested code and not a one-off script written for a demo.
 - **The problem is specific, not generic.** Clinics, salons, repair
   shops, tutoring services, and similar small businesses run on booked
   time slots. The standard fix for no-shows is a staff member manually
-  phoning every name on tomorrow's schedule — repetitive, easy to
+  phoning every name on tomorrow's schedule â€” repetitive, easy to
   deprioritize under any real workload, and the first thing that gets
   skipped when the day gets busy. `appointment-call-confirm` automates
   exactly that one chore: call each recipient, ask whether they're
@@ -34,7 +48,7 @@ is real, tested code and not a one-off script written for a demo.
 - **It's not "a generic AI that makes phone calls."** The skill
   explicitly refuses to be used for cold outreach, lead generation, or
   recurring/scheduled calling (that's a different, already-maintained
-  skill in the target repo — `call-reminder`) — see `SKILL.md`'s "When
+  skill in the target repo â€” `call-reminder`) â€” see `SKILL.md`'s "When
   Not To Use" section. Scope discipline is itself part of the
   contribution: a skill that tries to do everything is not reusable by
   anyone with a narrower need.
@@ -46,7 +60,7 @@ The underlying CALL-E integration (`actions/call_e.py`,
 a different hackathon's Submission Period; the code, governance model,
 and CALL-E API usage are unchanged and still real, tested, working
 code. What's new for **CALL-E: Your Code Is Calling** is
-`hackathon-submission/skills/appointment-call-confirm/` — a fresh,
+`hackathon-submission/skills/appointment-call-confirm/` â€” a fresh,
 standalone skill package (SKILL.md, references, a dependency-free
 runner script, and a sample dataset) extracted and rebuilt from that
 same underlying CALL-E API usage, scoped and documented specifically
@@ -60,8 +74,8 @@ carried over unchanged from unrelated prior work.
 
 Most "AI assistant" demos are a chat window bolted onto a single LLM
 call: the model answers, but a person still has to open the file, click
-the button, run the search — or make the call — themselves. Liya is
-built the other way around — the model plans, and the agent actually
+the button, run the search â€” or make the call â€” themselves. Liya is
+built the other way around â€” the model plans, and the agent actually
 carries out the plan against real tools (files, apps, browser,
 reminders, web search, messaging, and now real outbound phone calls
 via CALL-E) with failure recovery and governance built in, not bolted
@@ -72,7 +86,7 @@ person dialing a single number by hand.
 
 ## Why this architecture
 
-**Plan ? execute ? recover, as separate concerns.** `agent/planner.py`
+**Plan â†’ execute â†’ recover, as separate concerns.** `agent/planner.py`
 only turns a goal into a step list; `agent/executor.py` only runs steps;
 `agent/error_handler.py` only decides what to do when a step fails
 (retry / skip / replan / abort). Keeping these separate means a failure
@@ -86,12 +100,12 @@ once, in one place, overridable per-deployment via
 `config/api_keys.json`. Risky tools (arbitrary computer control, code
 execution) default to `confirm`; read-only or low-risk tools (web
 search, weather) default to `allow`. This is what makes it reasonable to
-let the planner call these tools autonomously at all — the danger isn't
+let the planner call these tools autonomously at all â€” the danger isn't
 gated per-call by prompt engineering, it's gated structurally.
 
 **Two execution engines, on purpose.** Liya ships both:
 
-1. The planner/executor path — a direct Gemini call producing a JSON
+1. The planner/executor path â€” a direct Gemini call producing a JSON
    step plan against a hand-maintained tool schema (`agent/planner.py`'s
    `PLANNER_PROMPT`). Fast and cheap (`gemini-3.5-flash-lite` for
    planning). This was the first piece built for this submission,
@@ -100,57 +114,49 @@ gated per-call by prompt engineering, it's gated structurally.
    modules as ADK `FunctionTool`s (`agent/adk_tools.py`), run through
    ADK's own agent loop and session management
    (`agent/adk_runner.py`), sharing the same underlying Gemini client
-   (`agent/adk_model.py` ? `config/ai_client.py`).
+   (`agent/adk_model.py` â†’ `config/ai_client.py`).
 
    The ADK path exists because ADK gives session/state management,
    structured tool-calling, and an agent runtime maintained by Google
-   instead of hand-rolled JSON-plan parsing — but rewriting the entire
+   instead of hand-rolled JSON-plan parsing â€” but rewriting the entire
    executor around ADK in one pass, across ~16 action modules that
    already work in production, was a bigger risk than the benefit
    justified this cycle. Running both side by side (`POST /task` vs
    `POST /task/adk`) lets the ADK path be exercised, tested, and trusted
    incrementally rather than as a single risky cutover.
 
-   **Scope of the ADK path today:** 10 of the repo's 16 actions are
-   wrapped as `FunctionTool`s in `agent/adk_tools.py` — `web_search`,
-   `file_controller`, `open_app`, `reminder`, `weather_report`,
-   `flight_finder`, `file_processor`, `send_message`, `code_helper`, and
-   `dev_agent`. The remaining 5 (`browser_control`, `computer_settings`,
-   `computer_control`, `desktop_control`, `screen_processor`) pull in
-   Playwright/pyautogui/screen-camera capture, which don't belong in a
-   headless Cloud Run container the way the 10 above do, so they stay
-   legacy-path-only. `youtube_video` is also excluded for now — its
-   "play" sub-action opens a URL in a local browser, which is meaningless
-   on a server; it would need to be split into a headless-safe subset
-   (summarize/get_info/trending) before it could be wrapped, and that
-   split hasn't been done yet. `send_message` is included specifically to
-   keep a `confirm`-tier tool on the ADK path — see below. `code_helper`
-   and `dev_agent` are also `confirm`-tier (they run generated code via
-   subprocess), with one exception carved out: `code_helper`'s
-   `screen_debug` sub-action reads the live screen and is blocked at the
-   ADK wrapper level regardless of governance, since there's no screen to
-   read on a server.
+   **Scope of the ADK path at the time this was written:** 10 of the
+   repo's 16 actions were wrapped as `FunctionTool`s in
+   `agent/adk_tools.py` â€” `web_search`, `file_controller`, `open_app`,
+   `reminder`, `weather_report`, `flight_finder`, `file_processor`,
+   `send_message`, `code_helper`, and `dev_agent`, alongside `call_e`
+   and `memory_tool`. *(As the top-of-file note says, `agent/adk_tools.py`
+   has since been trimmed further, to just `call_e_tool` and
+   `memory_tool`, along with the other 15 action modules being removed
+   from this repo entirely â€” this paragraph is left as written for
+   historical accuracy about why 10 were chosen at the time, not as a
+   description of the current file.)*
 
    **Governance parity.** The legacy executor enforces
    `agent/governance.py`'s allow/confirm/deny policy before every step
    (`agent/executor.py`'s governance check). The first version of the
-   ADK integration didn't — `agent/adk_tools.py` called straight into
+   ADK integration didn't â€” `agent/adk_tools.py` called straight into
    the action functions with no gate, so a `confirm`-tier tool could run
    through the ADK agent with nothing stopping it. `_governed()` in
    `agent/adk_tools.py` now wraps every ADK tool call through the same
    `check_tool_permission()` the legacy path uses, and `POST /task/adk`
    takes the same `auto_approve` field `POST /task` does
    (`backend/server.py`). `demo/demo_governance.py` drives this live: it
-   runs the same goal twice through the real ADK agent — once with no
+   runs the same goal twice through the real ADK agent â€” once with no
    consent (governance blocks `send_message`), once with
-   `auto_approve=True` (it runs) — so the policy is something a judge
+   `auto_approve=True` (it runs) â€” so the policy is something a judge
    can watch happen, not just read in this file.
 
 **One model client, everywhere.** `config/ai_client.py` is the only
 place that constructs a `google.genai.Client` or names a model string.
 Every action module, the legacy planner, and the ADK model subclass
 (`LiyaGemini`) go through it. A model version bump is a one-line change,
-not a repo-wide find-and-replace — which matters more as the ADK and
+not a repo-wide find-and-replace â€” which matters more as the ADK and
 legacy paths both need to stay in sync on which model they call.
 
 **Firestore is additive, not required.** `memory/memory_manager.py` and
@@ -167,61 +173,61 @@ section is left as-is, with strikethroughs, so the before/after is
 honest rather than rewritten history):
 
 - **Gemma integration** (`config/ai_client.py`, `agent/error_handler.py`)
-  — `error_handler.py`'s retry/skip/replan/abort classification call
+  â€” `error_handler.py`'s retry/skip/replan/abort classification call
   (high-frequency, low-stakes) now runs on `MODEL_GEMMA`
   (`gemma-3-27b-it`) via a new `generate_with_fallback()` helper, which
   transparently drops back to `MODEL_FLASH_LITE` if Gemma isn't reachable
   in a given project/region. Same fallback-chain philosophy as
-  `actions/web_search.py`'s Gemini ? DuckDuckGo ? Bing chain: a second
+  `actions/web_search.py`'s Gemini â†’ DuckDuckGo â†’ Bing chain: a second
   model is a pure cost/latency win here, never a new failure mode.
 
 - **Step-level checkpoint/resume** (`agent/checkpoint_store.py`, wired
-  into `agent/executor.py` and `agent/task_queue.py`) — after every
+  into `agent/executor.py` and `agent/task_queue.py`) â€” after every
   successfully completed step, `{plan, step_results, completed_steps,
-  replan_attempts}` is persisted (Firestore, or local JSON fallback —
+  replan_attempts}` is persisted (Firestore, or local JSON fallback â€”
   same pattern as `memory/memory_manager.py`). `AgentExecutor.execute(...,
   resume=True)` reads that checkpoint back and skips any step already in
   `completed_steps` instead of re-running the whole plan, so a step whose
   side effect already happened (a file written, a message sent, a flight
   booked) is never repeated just because the process restarted mid-task.
   The checkpoint is cleared on any terminal outcome (success, security
-  abort, explicit ABORT decision, exhausted replans) — it's resume state
+  abort, explicit ABORT decision, exhausted replans) â€” it's resume state
   for an in-flight task, not permanent history (that's still
   `task_queue.py`'s Firestore `tasks` collection). Demoed end-to-end,
   against a real cancelled-then-resumed task, in
   `demo/demo_checkpoint_resume.py`.
 
-- **`memory_tool`** (`agent/adk_tools.py`) — the one new ADK tool that
+- **`memory_tool`** (`agent/adk_tools.py`) â€” the one new ADK tool that
   isn't a re-wrap of an existing `actions/*.py` module. It exposes
   `memory/memory_manager.py`'s `remember()`/`forget()` directly to the
   ADK agent, so a fact learned mid-conversation ("I use VS Code, not
   PyCharm") can be persisted immediately instead of only being available
   to the *next* run's `_load_memory_context()` call. Not governed by
   `agent/governance.py`'s allow/confirm/deny table, since it only ever
-  touches the agent's own memory store — there's no external system for
+  touches the agent's own memory store â€” there's no external system for
   that policy to gate.
 
 ## Fixed just before submission: two ADK tools that couldn't actually succeed on Cloud Run
 
 Two of the "headless-safe" ADK tools were wired up and passed governance
 correctly, but couldn't complete their actual job on the deployed
-backend — worth naming rather than quietly patching over:
+backend â€” worth naming rather than quietly patching over:
 
 - **`weather_report`** called `webbrowser.open()` on a Google search URL
   and returned a generic "showing weather" message without ever fetching
   data. That's meaningless on a browser-less container. It now calls
-  wttr.in's JSON endpoint directly and returns a real text summary —
+  wttr.in's JSON endpoint directly and returns a real text summary â€”
   same code path on desktop and Cloud Run.
 - **`reminder`** relied on an OS-level scheduler (`systemd-run`/`at` on
   Linux) to fire a future notification. A Cloud Run container has
   neither, and with `min-instances=0` there's no guarantee the process
-  is even still alive when the reminder is due — so every call failed
+  is even still alive when the reminder is due â€” so every call failed
   there, including as the third step of the designated demo scenario
   below. It now falls back to persisting the reminder as a durable
   record (Firestore, or local file) when no OS scheduler is available,
   following the same additive-Firestore pattern as `memory_manager.py`
   and `checkpoint_store.py`. Actual delivery (a Cloud Scheduler job or a
-  client polling that record) is still open — see "What's next".
+  client polling that record) is still open â€” see "What's next".
 
 ## What's deliberately not in this codebase
 
@@ -248,11 +254,22 @@ next two items on that list, in that order.
 
 ## Repo hygiene notes
 
-`requirements.txt` (full desktop superset for `main.py`/`ui.py`) and
-`requirements-backend.txt` (the minimal set `Dockerfile` actually
-installs — no PyQt6/pyautogui/Playwright) are now separate files;
-`requirements-desktop.txt`, a byte-for-byte duplicate of `requirements.txt`, and two ad hoc debug scripts (`patch_audio_mimetype.py`, an already-applied one-off patch; the skill folder's `debug_calle.py` and `check_call_events.py`, exploratory scripts used while gathering `EVIDENCE.md`) were removed as submission cleanup — none were part of the skill's documented file list or referenced by any setup step.
-bookmarked. Licensed under MIT (`LICENSE`).
+`requirements.txt` (originally the full desktop superset for
+`main.py`/`ui.py`) has since been trimmed further, alongside the
+calling-only cut described at the top of this file â€” down to just the
+7 packages the trimmed desktop app actually imports (Gemini, optional
+Firestore, `phonenumbers`, `requests`, PyQt6, `psutil`,
+`sounddevice`). `requirements-backend.txt` (the minimal set
+`Dockerfile` installs â€” no PyQt6/pyautogui/Playwright) is unaffected,
+since `backend/server.py` is out of scope for this submission but
+still present in the repo. `requirements-desktop.txt` (a byte-for-byte
+duplicate of the old `requirements.txt`) and two ad hoc debug scripts
+(`patch_audio_mimetype.py`, an already-applied one-off patch; the
+skill folder's `debug_calle.py` and `check_call_events.py`,
+exploratory scripts used while gathering `EVIDENCE.md`) were removed
+earlier as submission cleanup â€” none were part of the skill's
+documented file list or referenced by any setup step. Licensed under
+MIT (`LICENSE`).
 
 ---
 
@@ -268,18 +285,29 @@ This is a real chore, not a stock example: it's the actual BYOF (Bring
 Your Own Friction) problem this team had while finishing this
 submission, run through Liya instead of done by hand. It's the one
 scenario used to demo Liya end-to-end, and it's chosen because it
-chains three independent tools (`web_search` ? `file_controller` ?
+chains three independent tools (`web_search` â†’ `file_controller` â†’
 `reminder`) in a single autonomous run, which exercises:
 
-- **Multi-step planning** — the planner has to sequence three
+- **Multi-step planning** â€” the planner has to sequence three
   dependent actions from one sentence, not just route to a single tool.
-- **Real execution, not simulation** — a file actually appears on the
+- **Real execution, not simulation** â€” a file actually appears on the
   Desktop and a reminder actually gets scheduled; nothing is mocked.
-- **Visible autonomy** — every step is logged through
+- **Visible autonomy** â€” every step is logged through
   `observability/logger.py` as it happens, not just summarized at the
   end.
 
-### Running it
+> **This scenario no longer runs** as of the calling-only trim noted
+> at the top of this file â€” `web_search`, `file_controller`, and
+> `reminder` were all removed. Left below as-written for historical
+> accuracy. **The current equivalent** is placing and checking a real
+> CALL-E call:
+> ```bash
+> python demo/demo_call_e.py            # blocked without consent, then allowed with auto_approve=True
+> python demo/demo_call_e.py --live     # add CALLE_API_KEY to actually place a call
+> ```
+> or just run `python main.py` and talk to it.
+
+### Running it (historical â€” see note above)
 
 ```bash
 python demo/run_demo.py
@@ -288,7 +316,7 @@ python demo/run_demo.py
 This submits the goal directly to the real `agent/task_queue.py` (no
 server needed) and streams the execution trace live as JSON events are
 emitted, formatted as a readable timeline: which step is running, which
-tool it called, and its result — as it happens, not after the fact.
+tool it called, and its result â€” as it happens, not after the fact.
 
 Against a running backend instead (local or deployed), including the
 Google ADK path:
@@ -310,7 +338,7 @@ python demo/run_demo_http.py --url http://localhost:8080 --key dev --adk
 1. stdout, as a JSON line per event (always on)
 2. Firestore, under `tasks/{task_id}/trace/` (when configured)
 3. An in-memory ring buffer, queryable via `get_trace(task_id)` (always
-   on — this is what makes the trace visible on a local run with no
+   on â€” this is what makes the trace visible on a local run with no
    GCP project at all)
 
 `GET /task/{task_id}/trace` uses Firestore when it's configured and

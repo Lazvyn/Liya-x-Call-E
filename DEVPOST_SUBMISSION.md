@@ -6,7 +6,7 @@ hackathon's actual requirements, the form itself asks for:
 1. **PR URL** to `CALLE-AI/awesome-phone-call-agents` — see
    [`hackathon-submission/README.md`](hackathon-submission/README.md)
    for the exact fork/copy/PR steps.
-   **PR URL:** https://github.com/CALLE-AI/awesome-phone-call-agents/pull/294
+   **PR URL:** https://github.com/CALLE-AI/awesome-phone-call-agents/pull/294 (merged)
 2. **A ~3 minute demo video**, uploaded to YouTube or Vimeo, public.
    **Video URL:** _fill in once recorded/uploaded._
 3. **The email address associated with your CALL-E account.**
@@ -16,6 +16,16 @@ hackathon's actual requirements, the form itself asks for:
    field on the form._
 5. **(Optional) the CALL-E Feedback Survey**, to be eligible for a
    Most Valuable Feedback prize — separate from the fields above.
+
+A second, separately-open contribution also exists —
+[`apps/python/liya-appointment-confirm`](https://github.com/CALLE-AI/awesome-phone-call-agents/pull/394),
+a standalone CLI app built on the same underlying CALL-E integration
+but in the "runnable app" contribution format rather than "Agent
+Skill." Rules permit multiple submissions as long as each is
+substantially different from the others, which this is; if entering
+it as a second Devpost submission, its own text description should
+lead with the app/CLI framing (dry-run preview, typed confirmation,
+duplicate-call guard) rather than restating this one.
 
 The sections below are the actual "Text description" content for the
 submission page.
