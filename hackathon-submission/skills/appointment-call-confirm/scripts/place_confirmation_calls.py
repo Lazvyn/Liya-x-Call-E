@@ -130,6 +130,7 @@ RESULT_SCHEMA = {
         "notes": {"type": "string"},
     },
     "required": ["status"],
+    "additionalProperties": False,
 }
 
 _TERMINAL_STATUSES = {"succeeded", "completed", "failed", "canceled", "cancelled", "error"}

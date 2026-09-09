@@ -22,7 +22,8 @@ re-parsed per call:
       "description": "One short sentence of anything relevant the recipient said, e.g. a reason for cancelling."
     }
   },
-  "required": ["status"]
+  "required": ["status"],
+  "additionalProperties": false
 }
 ```
 
@@ -42,11 +43,18 @@ prefer to cancel. Keep the call brief and courteous.
 ## Region inference
 
 If `region` isn't explicitly provided for a recipient, the script
-infers it from the E.164 country code using a small static map (the
-same region set CALL-E's API documents: US, SG, MY, IN, AE, AU, CA,
-GB, VN, DE, JP, FR, MX, BR, ID, PH, KE). If the country code doesn't
-map to one of those, the run stops for that recipient and asks the
-host to supply `region` explicitly rather than guessing.
+infers it from the E.164 country code using a small static map covering
+16 of CALL-E's currently-documented regions (US, SG, MY, IN, AE, AU,
+GB, VN, DE, JP, FR, MX, BR, ID, PH, KE) — a subset chosen for common
+single-country calling codes, not the full list CALL-E supports. `+1`
+is mapped to `US` only; Canadian (`CA`) numbers share that calling
+code and are not auto-inferred, so `region` must be supplied
+explicitly for them. If the country code doesn't map to one of the
+16 above, the run stops for that recipient and asks the host to
+supply `region` explicitly rather than guessing — see CALL-E's
+[supported regions and languages list](https://github.com/CALLE-AI/call-e-integrations#supported-regions-and-languages)
+for the complete, current set and to extend `_COUNTRY_CODE_TO_REGION`
+for additional single-country codes.
 
 ## Mapping to skill output
 

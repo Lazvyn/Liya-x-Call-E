@@ -4,7 +4,7 @@ Deadline: **Sep 14, 2026 @ 9:15pm GMT+5:30**.
 
 ## Done
 - [x] `hackathon-submission/skills/appointment-call-confirm/assets/sample_appointments.csv`
-      has three appointments (US/SG/IN); dry-run prints all three with
+      has three appointments (US/GB/GB); dry-run prints all three with
       correct region inference for each.
 - [x] **Forked** `CALLE-AI/awesome-phone-call-agents`, copied the skill
       in, ran `scripts/validate_repository.py` (passed), opened the PR.

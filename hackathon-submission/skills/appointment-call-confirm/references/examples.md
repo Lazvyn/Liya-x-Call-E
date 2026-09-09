@@ -23,10 +23,17 @@ Re-run with --confirm to actually place these 3 call(s).
 ## 2. Real run after approval
 
 ```bash
-python scripts/place_confirmation_calls.py --in assets/sample_appointments.csv --out results.csv --confirm
+python scripts/place_confirmation_calls.py \
+  --in assets/sample_appointments.csv \
+  --out results.csv \
+  --allowlist assets/authorized_numbers.example.txt \
+  --confirm
 ```
 
-Even with `--confirm`, the script reprints the dry-run list and requires an
+`--allowlist` is required for every `--confirm` run — omitting it makes
+the script refuse to run at all (see section 4 below and
+`references/safety.md`). Even with `--confirm` and a valid allowlist,
+the script reprints the dry-run list and requires an
 interactive typed confirmation before dialing anyone:
 
 ```
@@ -94,14 +101,14 @@ skips it entirely rather than calling it.
 
 ## 5. Base URL pinning
 
-`CALLE_BASE_URL` defaults to CALL-E's official host. Pointing it anywhere
-else without `--allow-custom-host` causes the script to refuse to run
-rather than risk sending the API key to an unexpected host:
+The API base URL is a hardcoded module constant
+(`https://api.heycall-e.com`) — there is no environment variable and no
+CLI flag that can point it anywhere else. Setting `CALLE_BASE_URL` in
+your shell has no effect on the script; the bearer credential is never
+sendable to any other host:
 
 ```bash
 CALLE_BASE_URL=https://staging.example.com \
   python scripts/place_confirmation_calls.py --in assets/sample_appointments.csv --confirm
-# REFUSING TO RUN: base URL host 'staging.example.com' does not match
-# the official CALL-E host 'api.heycall-e.com'. Pass --allow-custom-host
-# if this is intentional...
+# (CALLE_BASE_URL is ignored — the script still targets api.heycall-e.com)
 ```

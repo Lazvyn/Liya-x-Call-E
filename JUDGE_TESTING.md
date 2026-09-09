@@ -34,14 +34,18 @@ export CALLE_API_KEY=your_calle_key   # from https://github.com/CALLE-AI/call-e-
 python3 scripts/place_confirmation_calls.py \
   --in assets/sample_appointments.csv \
   --out results.csv \
+  --allowlist assets/authorized_numbers.example.txt \
   --confirm
 ```
 
-Replace the sample CSV's phone number with a real, consented one
-first. This places one real outbound call per row, serially, through
-CALL-E's actual `POST /v1/calls` / `GET /v1/calls/{call_id}` Developer
-API — no mocking — and writes a structured result row per recipient to
-`results.csv`.
+`--allowlist` is required for every `--confirm` run — the script
+refuses to run without it (see `references/safety.md`); there is no
+override. Replace the sample CSV's phone number, and the matching
+entry in `assets/authorized_numbers.example.txt`, with a real,
+consented one first. This places one real outbound call per row,
+serially, through CALL-E's actual `POST /v1/calls` /
+`GET /v1/calls/{call_id}` Developer API — no mocking — and writes a
+structured result row per recipient to `results.csv`.
 
 ## 4. See the underlying CALL-E integration it was extracted from
 
