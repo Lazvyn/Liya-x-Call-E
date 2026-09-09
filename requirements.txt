@@ -1,39 +1,14 @@
-﻿# Full desktop-app requirement set (main.py / ui.py + all actions/*.py).
-# Deploying the backend to Cloud Run? Use requirements-backend.txt instead —
-# it's the minimal subset the Dockerfile actually needs, without PyQt6,
-# pyautogui, playwright, etc. This file is kept as the local/desktop
-# superset so `pip install -r requirements.txt` still sets up the full app.
-google-genai>=1.0
-google-adk>=2.7.1
-google-cloud-firestore>=2.16
-fastapi>=0.111
-uvicorn[standard]>=0.29
-pydantic>=2.0
-numpy>=1.26   # used by actions/screen_processor.py, youtube_video.py, game_updater.py
-requests>=2.28   # used by demo/run_demo_http.py
-phonenumbers>=8.13  # actions/call_e.py validates/normalizes numbers before calling CALL-E
-ddgs>=9.0        # actions/web_search.py's fallback search backend when Gemini quota/grounding is unavailable
-playwright>=1.44  # used by actions/browser_control.py; setup.py runs playwright install on top of this
+# Calling-only desktop app (main.py / ui.py + actions/call_e.py).
+# This app now does exactly one thing: place and check CALL-E phone calls
+# through the Liya voice interface. Everything else the original assistant
+# could do (browser control, file processing, code tooling, screen
+# reading, PDF/Office conversion, etc.) has been removed for scope.
 
-# Desktop app (main.py / ui.py) — imported unconditionally at module load,
-# so python main.py won't start without these.
-PyQt6>=6.7        # desktop HUD UI (ui.py)
-psutil>=5.9       # system stats shown in the HUD (ui.py)
-sounddevice>=0.4  # voice I/O for the Gemini Live loop (main.py)
-pyautogui>=0.9    # main.py eagerly imports actions/youtube_video.py, which
-                  # imports pyautogui unconditionally (no try/except there,
-                  # unlike desktop.py/computer_settings.py/computer_control.py)
+google-genai>=1.0          # Gemini Live voice session (main.py)
+google-cloud-firestore>=2.16  # optional cloud memory backend; falls back to local-file mode without it
+phonenumbers>=8.13         # actions/call_e.py validates/normalizes numbers before calling CALL-E
+requests>=2.28             # actions/call_e.py's HTTP calls to CALL-E's Calls API
 
-PyPDF2
-pdfplumber
-pandas
-pydub
-python-pptx
-python-docx    # actions/file_processor.py's PDF<->Word conversion (guarded, but silently degrades without it)
-Pillow
-mss
-opencv-python  # actions/screen_processor.py (guarded via _CV2 flag, but loses that feature without it)
-send2trash
-youtube_transcript_api
-pycaw; sys_platform == 'win32'       # actions/computer_settings.py volume control on Windows (guarded, falls back to keypress without it)
-comtypes; sys_platform == 'win32'    # required by pycaw above
+PyQt6>=6.7                 # desktop HUD UI (ui.py)
+psutil>=5.9                # system stats shown in the HUD (ui.py)
+sounddevice>=0.4           # voice I/O for the Gemini Live loop (main.py)
