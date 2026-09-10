@@ -40,18 +40,17 @@ either submission.
 git clone https://github.com/Lazvyn/Liya-x-Call-E.git
 cd Liya-x-Call-E
 pip install -r requirements.txt
-```
-
-Then just run the desktop app:
-
-```bash
 python main.py
 ```
 
 On first launch, with no `config/api_keys.json` present yet, a setup
-popup appears asking for your Gemini API key and OS — enter it once,
-submit, and Liya writes `config/api_keys.json` itself and goes live.
-No manual config file editing needed.
+popup appears asking for your **Gemini API key** and **CALL-E API
+key**, plus your OS — fill both in once, submit, and Liya writes
+`config/api_keys.json` itself and goes live. No manual config file
+editing needed. (If you don't have a CALL-E key yet, you can leave
+that field blank and add it later — see [Local setup](#local-setup)
+below for the full walkthrough, including what to do if the popup
+doesn't show both fields, and common first-run problems on Windows.)
 
 **Judges/reviewers:** the fastest way to see the actual submission is
 [`hackathon-submission/skills/appointment-call-confirm/SKILL.md`](hackathon-submission/skills/appointment-call-confirm/SKILL.md)
@@ -125,38 +124,125 @@ of scope for this submission — see "How it's put together" above.)*
 
 ## Local setup
 
-**Requirements:** Python 3.12+, a Gemini API key.
+**Requirements:** Python 3.12 or newer, a Gemini API key, and (to
+place real calls) a [CALL-E](https://github.com/CALLE-AI/call-e-integrations)
+API key — new accounts include 20 free calls.
+
+### 1. Clone and install dependencies
 
 ```bash
 git clone https://github.com/Lazvyn/Liya-x-Call-E.git
 cd Liya-x-Call-E
-
 pip install -r requirements.txt
 ```
 
-Then create `config/api_keys.json`:
+**If you have more than one Python version installed (common on
+Windows):** `pip install` and `python main.py` must use the *same*
+interpreter, or packages installed by one won't be visible to the
+other — this is the single most common reason a fresh clone fails
+with `Import "X" could not be resolved` or `ModuleNotFoundError`
+despite `pip install` appearing to succeed. Check which interpreter
+you're about to use before installing:
+
+```bash
+python -c "import sys; print(sys.executable)"
+```
+
+If you're using VS Code, also check the interpreter shown in the
+bottom-right status bar (or `Ctrl+Shift+P` → "Python: Select
+Interpreter") and make sure it points at the *same* `python.exe` your
+terminal is using. If they don't match, either switch VS Code's
+interpreter to the one you installed into, or reinstall targeting the
+one VS Code is using:
+
+```bash
+"C:\path\to\that\python.exe" -m pip install -r requirements.txt
+```
+
+Then close and reopen your terminal (or VS Code's integrated
+terminal) so it picks up the change.
+
+### 2. Configure your API keys
+
+Run the app:
+
+```bash
+python main.py
+```
+
+With no `config/api_keys.json` present yet, a setup popup appears
+with two fields — **Gemini API key** and **CALL-E API key** — plus
+your OS (auto-detected). Fill in what you have and submit; Liya
+writes `config/api_keys.json` itself. CALL-E's key is optional at
+this point (voice + text chat works without it), but no call will
+actually place without one.
+
+**If the popup only shows one field (Gemini), your local `ui.py` is
+out of date** — pull the latest `main` branch, which includes the
+CALL-E key field in the setup wizard. **If the popup doesn't appear
+at all** even though you expect first-run setup, it's because
+`config/api_keys.json` already exists from a previous run (the popup
+only shows when required keys are missing) — see the next paragraph
+if you need to add a key to an already-configured install.
+
+**Adding a CALL-E key later, to an already-configured install:** as
+long as your `ui.py` is up to date, just delete `config/api_keys.json`
+(or open it and add `"calle_api_key": "YOUR_KEY"` yourself) and rerun
+`python main.py` — the popup reappears, pre-filled with your existing
+Gemini key, so you only need to add the missing field. Either way,
+the file ends up looking like:
 
 ```json
 {
   "gemini_api_key": "YOUR_GEMINI_API_KEY",
   "os_system": "windows",
-  "calle_api_key": "YOUR_CALLE_API_KEY",
-  "calle_base_url": "https://api.heycall-e.com"
+  "calle_api_key": "YOUR_CALLE_API_KEY"
 }
 ```
 
-`calle_api_key` / `calle_base_url` are needed to actually place calls
-via `actions/call_e.py`. Get a key by following
-[CALL-E's install guide](https://github.com/CALLE-AI/call-e-integrations);
-new accounts include 20 free calls. `CALLE_API_KEY` / `CALLE_BASE_URL`
+An optional `calle_base_url` key can also be set by hand if you're
+pointed at a non-default CALL-E deployment; it defaults to
+`https://api.heycall-e.com`. `CALLE_API_KEY` / `CALLE_BASE_URL`
 environment variables work as a fallback if no local config file is
-present.
+present at all (e.g. a headless/cloud deployment — see
+`backend/README_DEPLOY.md`).
 
-Run it:
+### 3. Run it
 
 ```bash
 python main.py
 ```
+
+Talk to Liya, ask her to call someone about something specific. She
+reads back the number and task and asks you to confirm out loud
+before anything real happens — say yes, and she places the call
+through CALL-E and reports back the result.
+
+### Troubleshooting checklist
+
+If a call command "does nothing" or fails silently, work through
+these in order:
+
+1. **Is `calle_api_key` actually set?** Open `config/api_keys.json`
+   and check. If it's missing, `call_e` fails immediately with
+   `CALL-E is not configured...` — Liya should say this out loud, but
+   check the terminal log either way.
+2. **Did you actually say yes to the confirmation?** `call_e` refuses
+   to run without explicit verbal confirmation in the same
+   conversation — see [Tool governance](#tool-governance) below.
+3. **Same recipient called twice within 10 minutes?** That's
+   intentionally skipped as a likely accidental repeat — see the
+   dedupe note in `main.py`'s `_execute_tool`. Confirm again
+   explicitly if it's deliberate.
+4. **Is `phonenumbers` installed in the interpreter you're actually
+   running?** Missing it doesn't crash the call, but it does disable
+   proper number validation — recheck step 1's interpreter-matching
+   advice if `pip show phonenumbers` succeeds but VS Code/`python
+   main.py` still can't find it.
+5. **Check the terminal output.** `main.py` prints
+   `[CallE] placing call -> ...` and `[CallE] call <id> -> <status>`
+   lines as it goes — these show whether the request ever reached
+   CALL-E at all, versus failing before it got that far.
 
 ---
 
