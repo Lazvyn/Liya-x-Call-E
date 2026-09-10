@@ -1032,9 +1032,9 @@ class _DropCanvas(QWidget):
 # First-run setup overlay
 # ---------------------------------------------------------------------------
 class SetupOverlay(QWidget):
-    done = pyqtSignal(str, str)
+    done = pyqtSignal(str, str, str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, prefill: dict | None = None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet(f"""
@@ -1045,7 +1045,9 @@ class SetupOverlay(QWidget):
             }}
         """)
 
-        detected     = {"darwin": "mac", "windows": "windows"}.get(_OS.lower(), "linux")
+        prefill = prefill or {}
+        detected     = prefill.get("os_system") or \
+            {"darwin": "mac", "windows": "windows"}.get(_OS.lower(), "linux")
         self._sel_os = detected
 
         layout = QVBoxLayout(self)
@@ -1076,6 +1078,8 @@ class SetupOverlay(QWidget):
         self._key_input = QLineEdit()
         self._key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self._key_input.setPlaceholderText("AIza…")
+        if prefill.get("gemini_api_key"):
+            self._key_input.setText(prefill["gemini_api_key"])
         self._key_input.setFont(QFont("Courier New", 10))
         self._key_input.setFixedHeight(32)
         self._key_input.setStyleSheet(f"""
@@ -1086,6 +1090,33 @@ class SetupOverlay(QWidget):
             QLineEdit:focus {{ border: 1px solid {C.PRI}; }}
         """)
         layout.addWidget(self._key_input)
+        layout.addSpacing(12)
+
+        sep_calle = QFrame()
+        sep_calle.setFrameShape(QFrame.Shape.HLine)
+        sep_calle.setStyleSheet(f"color: {C.BORDER};")
+        layout.addWidget(sep_calle)
+        layout.addSpacing(4)
+
+        layout.addWidget(_lbl("CALL-E API KEY", 8, color=C.TEXT_DIM,
+                               align=Qt.AlignmentFlag.AlignLeft))
+        layout.addWidget(_lbl("Needed to actually place phone calls — get one at heycall-e.com.",
+                               7, color=C.PRI_DIM, align=Qt.AlignmentFlag.AlignLeft))
+        self._calle_key_input = QLineEdit()
+        self._calle_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self._calle_key_input.setPlaceholderText("optional — can add later")
+        if prefill.get("calle_api_key"):
+            self._calle_key_input.setText(prefill["calle_api_key"])
+        self._calle_key_input.setFont(QFont("Courier New", 10))
+        self._calle_key_input.setFixedHeight(32)
+        self._calle_key_input.setStyleSheet(f"""
+            QLineEdit {{
+                background: #040f04; color: {C.TEXT};
+                border: 1px solid {C.BORDER}; border-radius: 4px; padding: 4px 8px;
+            }}
+            QLineEdit:focus {{ border: 1px solid {C.PRI}; }}
+        """)
+        layout.addWidget(self._calle_key_input)
         layout.addSpacing(12)
 
         sep2 = QFrame()
@@ -1164,7 +1195,8 @@ class SetupOverlay(QWidget):
                 f" QLineEdit {{ border: 1px solid {C.RED}; }}"
             )
             return
-        self.done.emit(key, self._sel_os)
+        calle_key = self._calle_key_input.text().strip()  # optional
+        self.done.emit(key, calle_key, self._sel_os)
 
 
 # ---------------------------------------------------------------------------
@@ -1901,23 +1933,53 @@ class MainWindow(QMainWindow):
             return False
         try:
             d = json.loads(API_FILE.read_text(encoding="utf-8"))
-            return bool(d.get("gemini_api_key")) and bool(d.get("os_system"))
+            # calle_api_key is required too, not just gemini — this app's
+            # only job is placing CALL-E calls, so a config missing it is
+            # incomplete even if it was written by an older build of the
+            # setup wizard that never asked for it.
+            return (
+                bool(d.get("gemini_api_key"))
+                and bool(d.get("os_system"))
+                and bool(d.get("calle_api_key"))
+            )
         except Exception:
             return False
 
     def _show_setup(self):
-        ov = SetupOverlay(self._central)
+        # Pre-fill from whatever's already on disk (e.g. a gemini_api_key
+        # saved by an older build that never asked for calle_api_key) so
+        # returning users only need to fill in what's actually missing
+        # instead of re-typing everything or hand-editing the JSON.
+        existing = {}
+        if API_FILE.exists():
+            try:
+                existing = json.loads(API_FILE.read_text(encoding="utf-8"))
+            except Exception:
+                existing = {}
+        ov = SetupOverlay(self._central, prefill=existing)
         ov.done.connect(self._on_setup_done)
         self._overlay = ov
         self._reposition_overlay()
         ov.show()
 
-    def _on_setup_done(self, key: str, os_name: str):
+    def _on_setup_done(self, key: str, calle_key: str, os_name: str):
         os.makedirs(CONFIG_DIR, exist_ok=True)
-        API_FILE.write_text(
-            json.dumps({"gemini_api_key": key, "os_system": os_name}, indent=4),
-            encoding="utf-8",
-        )
+        # Preserve any config already on disk (e.g. calle_base_url set by
+        # hand) instead of clobbering it — previously this always wrote a
+        # brand-new file with only gemini_api_key + os_system, which is why
+        # calle_api_key never made it in even when the user had typed it
+        # somewhere else.
+        data = {}
+        if API_FILE.exists():
+            try:
+                data = json.loads(API_FILE.read_text(encoding="utf-8"))
+            except Exception:
+                data = {}
+        data["gemini_api_key"] = key
+        data["os_system"] = os_name
+        if calle_key:
+            data["calle_api_key"] = calle_key
+        API_FILE.write_text(json.dumps(data, indent=4), encoding="utf-8")
         self._ready = True
         if self._overlay:
             self._overlay.hide()
