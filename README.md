@@ -114,7 +114,7 @@ only touches `call_e_tool`.
 | `memory/memory_manager.py` | Long-term memory read/write (Firestore-backed, local-file fallback) — used to remember contacts/appointments |
 | `memory/config_manager.py` | Reads/writes `config/api_keys.json` |
 | `config/ai_client.py` | Single source of truth for the Gemini model + client |
-| `hackathon-submission/` | The actual judged submission: standalone `appointment-call-confirm` Agent Skill (merged PR #294) |
+| `hackathon-submission/` | The actual judged submission: standalone `appointment-call-confirm` Agent Skill (open PR #294, review feedback addressed) |
 
 *(`agent/planner.py`, `agent/executor.py`, `agent/task_queue.py`,
 `backend/server.py`, and most of `demo/*.py` are also present but out
@@ -313,3 +313,4 @@ busy line, and CALL-E's summary text doesn't distinguish the two.
 `call_status`'s diagnosis logic catches this pattern specifically, but
 any failure mode CALL-E doesn't expose a carrier code for still falls
 back to CALL-E's own (sometimes generic) summary.
+
