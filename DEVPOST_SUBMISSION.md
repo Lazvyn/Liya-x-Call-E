@@ -8,7 +8,7 @@ hackathon's actual requirements, the form itself asks for:
    for the exact fork/copy/PR steps.
    **PR URL:** https://github.com/CALLE-AI/awesome-phone-call-agents/pull/294 (merged)
 2. **A ~3 minute demo video**, uploaded to YouTube or Vimeo, public.
-   **Video URL:** _fill in once recorded/uploaded._
+      **Video URL:** https://youtu.be/S0wawprIYi0
 3. **The email address associated with your CALL-E account.**
    **Email:** thoudamlanchenba360@gmail.com
 4. **(Optional) a URL to a functional demo application.**
