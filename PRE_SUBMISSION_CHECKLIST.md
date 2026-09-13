@@ -1,4 +1,4 @@
-# Pre-submission checklist — CALL-E: Your Code Is Calling
+﻿# Pre-submission checklist — CALL-E: Your Code Is Calling
 
 Deadline: **Sep 14, 2026 @ 9:15pm GMT+5:30**.
 
@@ -8,7 +8,7 @@ Deadline: **Sep 14, 2026 @ 9:15pm GMT+5:30**.
       correct region inference for each.
 - [x] **Forked** `CALLE-AI/awesome-phone-call-agents`, copied the skill
       in, ran `scripts/validate_repository.py` (passed), opened the PR.
-- [x] **PR merged**: https://github.com/CALLE-AI/awesome-phone-call-agents/pull/294
+- [x] **PR open, review feedback addressed**: https://github.com/CALLE-AI/awesome-phone-call-agents/pull/294
 - [x] PR URL is in `DEVPOST_SUBMISSION.md` and `hackathon-submission/README.md`.
 - [x] CALL-E account email is in `DEVPOST_SUBMISSION.md`.
 - [x] *(Optional, second entry)* A separate app-based contribution,
@@ -47,4 +47,5 @@ Deadline: **Sep 14, 2026 @ 9:15pm GMT+5:30**.
 - Double-check the sample CSV's phone numbers are fictitious/test
   numbers only if you swap in a real one for the video — don't call a
   number without that person's consent.
+
 

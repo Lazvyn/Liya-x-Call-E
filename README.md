@@ -297,7 +297,7 @@ batch-CSV version of the same underlying call.
 | Claim | Proof script | What it actually shows |
 |---|---|---|
 | CALL-E phone calls gated by governance, same as any confirm-tier tool | `python demo/demo_call_e.py` (add `--live` + `CALLE_API_KEY` to actually place a call) | Runs the real ADK agent against `call_e_tool` — blocked with no consent, allowed with `auto_approve=True`, via the live `check_tool_permission()` call |
-| Batch CALL-E confirmation calls, standalone (the merged hackathon submission) | `python hackathon-submission/skills/appointment-call-confirm/scripts/place_confirmation_calls.py --in hackathon-submission/skills/appointment-call-confirm/assets/sample_appointments.csv` (dry run; add `--confirm` + `CALLE_API_KEY` to actually call) | Calls CALL-E's Developer API directly, with no Liya/ADK dependency, against a batch of appointments — dry-run list, then serial calls, structured per-recipient results |
+| Batch CALL-E confirmation calls, standalone (the hackathon submission) | `python hackathon-submission/skills/appointment-call-confirm/scripts/place_confirmation_calls.py --in hackathon-submission/skills/appointment-call-confirm/assets/sample_appointments.csv` (dry run; add `--confirm` + `CALLE_API_KEY` to actually call) | Calls CALL-E's Developer API directly, with no Liya/ADK dependency, against a batch of appointments — dry-run list, then serial calls, structured per-recipient results |
 | Phone-number validation catches misread country codes before they reach CALL-E | Try `python main.py`, ask it to call a bare 10-digit number with no country code | It asks which country the number belongs to rather than guessing — see `actions/call_e.py`'s `_normalize_phone` |
 | Failure diagnosis distinguishes an unreachable number from a busy line | Place a call to an invalid number, then ask "did that call go through?" | `call_status` surfaces the carrier failure code + near-instant duration pattern instead of repeating CALL-E's generic "may be busy" summary |
 
@@ -313,4 +313,5 @@ busy line, and CALL-E's summary text doesn't distinguish the two.
 `call_status`'s diagnosis logic catches this pattern specifically, but
 any failure mode CALL-E doesn't expose a carrier code for still falls
 back to CALL-E's own (sometimes generic) summary.
+
 
