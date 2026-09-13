@@ -67,7 +67,8 @@ required.
 A second, separately-scoped contribution built on the same underlying
 CALL-E integration is also open as a PR:
 [`apps/python/liya-appointment-confirm`](https://github.com/CALLE-AI/awesome-phone-call-agents/pull/394)
-— a standalone CLI app (dry-run preview, typed confirmation before any
-real call, a duplicate-call guard, and carrier-code-based failure
-diagnosis) rather than an Agent Skill. Not required reading to
-evaluate the skill above; listed here for completeness.
+— a standalone CLI app (no-call preview by default, explicit `--live`
+opt-in plus a per-run authorization of the exact destination number
+before any real call fires, masked phone output, and a duplicate-call
+guard) rather than an Agent Skill. Not required reading to evaluate
+the skill above; listed here for completeness.

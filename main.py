@@ -181,6 +181,9 @@ class LiyaLive:
         self._turn_done_event: asyncio.Event | None = None
         self._greeted        = False
         self._last_call_e    = (None, 0.0)  # last called phone (digits only), timestamp
+        self._resumption_handle = None  # lets a reconnect resume the same Live session
+        self._dropped_mic_chunks = 0
+        self._last_drop_log = 0.0
         self._last_call_id   = None         # call_id of the most recently placed call
 
     def _on_text_command(self, text: str):
@@ -279,7 +282,7 @@ class LiyaLive:
             input_audio_transcription={},
             system_instruction="\n".join(parts),
             tools=[{"function_declarations": TOOL_DECLARATIONS}],
-            session_resumption=types.SessionResumptionConfig(),
+            session_resumption=types.SessionResumptionConfig(handle=self._resumption_handle),
             speech_config=types.SpeechConfig(
                 voice_config=types.VoiceConfig(
                     prebuilt_voice_config=types.PrebuiltVoiceConfig(
@@ -416,9 +419,46 @@ class LiyaLive:
     async def _send_realtime(self):
         while True:
             msg = await self.out_queue.get()
-            await self.session.send_realtime_input(
-                audio=types.Blob(data=msg["data"], mime_type=msg["mime_type"])
+            # A healthy send should complete in well under a second. If it's
+            # hanging (half-dead socket, about to hit the server's keepalive
+            # ping timeout), don't let the mic queue silently back up and
+            # spam drop-warnings for the whole timeout window — fail fast so
+            # the TaskGroup tears down and `run()`'s reconnect loop kicks in.
+            await asyncio.wait_for(
+                self.session.send_realtime_input(
+                    audio=types.Blob(data=msg["data"], mime_type=msg["mime_type"])
+                ),
+                timeout=5,
             )
+
+    def _enqueue_mic_chunk(self, item):
+        # Runs on the event loop (scheduled via call_soon_threadsafe). If the
+        # network side (`_send_realtime`) can't keep up — e.g. a stalled or
+        # dying websocket right before a keepalive-timeout disconnect —
+        # `out_queue` fills up. Rather than let put_nowait raise (which
+        # asyncio logs as an unhandled "Exception in callback" traceback for
+        # *every single chunk*, drowning out the real error), drop the
+        # oldest buffered chunk to make room and keep only a rate-limited
+        # summary so real problems stay visible in the log.
+        try:
+            self.out_queue.put_nowait(item)
+        except asyncio.QueueFull:
+            try:
+                self.out_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                pass
+            try:
+                self.out_queue.put_nowait(item)
+            except asyncio.QueueFull:
+                pass
+            self._dropped_mic_chunks += 1
+            now = time.time()
+            if now - self._last_drop_log > 5:
+                print(f"[LIYA] Mic->network backpressure: dropped "
+                      f"{self._dropped_mic_chunks} audio chunk(s) in the last 5s "
+                      f"(connection may be stalled)")
+                self._dropped_mic_chunks = 0
+                self._last_drop_log = now
 
     async def _listen_audio(self):
         print("[LIYA] Mic started")
@@ -430,7 +470,7 @@ class LiyaLive:
             if not liya_speaking and not self.ui.muted:
                 data = indata.tobytes()
                 loop.call_soon_threadsafe(
-                    self.out_queue.put_nowait,
+                    self._enqueue_mic_chunk,
                     {"data": data, "mime_type": f"audio/pcm;rate={SEND_SAMPLE_RATE}"}
                 )
 
@@ -461,6 +501,9 @@ class LiyaLive:
                         if self._turn_done_event and self._turn_done_event.is_set():
                             self._turn_done_event.clear()
                         self.audio_in_queue.put_nowait(response.data)
+
+                    if response.session_resumption_update and response.session_resumption_update.resumable:
+                        self._resumption_handle = response.session_resumption_update.new_handle
 
                     if response.server_content:
                         sc = response.server_content
